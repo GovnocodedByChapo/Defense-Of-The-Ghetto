@@ -1,7 +1,7 @@
 local Vector3D = require('vector3d')
 local map = require('DOTG1.map')
 
-MODULE = {
+MODULE_CAMERA = {
     set_pos = function(vec3)
         local bs = raknetNewBitStream()
         raknetBitStreamWriteFloat(bs, vec3.x)
@@ -25,22 +25,49 @@ MODULE = {
     zoom = 20
 }
 
-MODULE.update_camera = function()
-    MODULE.set_pos(MODULE.pos)
-    MODULE.look_at(Vector3D(MODULE.pos.x - 20, MODULE.pos.y, MODULE.pos.z - MODULE.zoom), 0)
+MODULE_CAMERA.init = function()
+    MODULE_CAMERA.pos.z = MODULE_CAMERA.pos.z + MODULE_CAMERA.zoom
+end
+
+MODULE_CAMERA.update_camera = function()
+    MODULE_CAMERA.set_pos(MODULE_CAMERA.pos)
+    MODULE_CAMERA.look_at(Vector3D(MODULE_CAMERA.pos.x - 20, MODULE_CAMERA.pos.y, MODULE_CAMERA.pos.z - MODULE_CAMERA.zoom), 0)
     setCameraPositionUnfixed(0, 3.15)
     if isKeyDown(9) then
         local ped = Vector3D(getCharCoordinates(PLAYER_PED))
-        MODULE.pos.x, MODULE.pos.y = ped.x + 15, ped.y
+        MODULE_CAMERA.pos.x, MODULE_CAMERA.pos.y = ped.x + 15, ped.y
+    end
+
+    local curX, curY = getCursorPos()
+    local resX, resY = getScreenResolution()
+
+
+
+
+    -->> point camera at PLAYER on TAB button
+    if isKeyDown(VK_TAB) then
+        local ped = Vector3D(getCharCoordinates(PLAYER_PED))
+        MODULE_CAMERA.pos.x, MODULE_CAMERA.pos.y = ped.x + 15, ped.y
+    end
+
+    -->> move camera if cursor on screen corner
+    if sampIsCursorActive() then
+        local curX, curY = getCursorPos()
+        local resX, resY = getScreenResolution()
+        if curX <= 5 or curX >= resX - 5 then
+            MODULE_CAMERA.pos.y = MODULE_CAMERA.pos.y + (curX <= 5 and -0.5 or 0.5)
+        end
+        if curY <= 5 or curY >= resY - 5 then
+            MODULE_CAMERA.pos.x = MODULE_CAMERA.pos.x + (curY <= 5 and -0.5 or 0.5)
+        end
+    else
+        if isKeyDown(VK_MBUTTON) then
+            local mvx, mvy = getPcMouseMovement()
+            MODULE_CAMERA.pos.y = MODULE_CAMERA.pos.y - mvx / 10
+            MODULE_CAMERA.pos.x = MODULE_CAMERA.pos.x + mvy / 10
+        end
     end
 end
-
-
-local ffi = require('ffi')
-ffi.cdef([[
-    int GET_X_LPARAM(int);
-    int GET_Y_LPARAM(int);
-]])
 
 addEventHandler('onWindowMessage', function(msg, param, lParam)
     if msg == 0x020a --[[ WM_MOUSEWHEEL ]] then
@@ -48,10 +75,9 @@ addEventHandler('onWindowMessage', function(msg, param, lParam)
             Down = 4287102976,
             Up = 7864320
         }
-        MODULE.pos.z = param == Type.Down and MODULE.pos.z + 2 or MODULE.pos.z - 2
-        MODULE.pos.x = param == Type.Down and MODULE.pos.x + 2 or MODULE.pos.x - 2
-    elseif msg == 0x0200 --[[WM_MOUSEMOVE]] then
-        --print('WM_MM', param, param2) 
-        print('WM_MOUSEMOVE', ffi.C.GET_X_LPARAM(lParam), ffi.C.GET_Y_LPARAM(lParam))
+        MODULE_CAMERA.pos.z = param == Type.Down and MODULE_CAMERA.pos.z + 2 or MODULE_CAMERA.pos.z - 2
+        MODULE_CAMERA.pos.x = param == Type.Down and MODULE_CAMERA.pos.x + 2 or MODULE_CAMERA.pos.x - 2
     end
 end)
+
+return MODULE_CAMERA
