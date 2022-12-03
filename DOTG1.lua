@@ -1,51 +1,86 @@
+require('lib.moonloader')
 local ffi = require('ffi')
 local imgui = require('mimgui')
-
--->> load DOTG libs
---local core = require('DOTG1.core')
+local Vector3D = require('vector3d')
 local map = require('DOTG1.map')
+local camera = require('DOTG1.camera')
 
 --local ui = require('DOTG1.ui')
 --local net = core.net
 
--->> vars
-
-
--->> interface
---imgui.OnInitialize(function()
---    imgui.GetIO().IniFilename = nil
---
---    ui.init()
---end)
---
-
 SIDE_GROOVE, SIDE_BALLAS = 0, 1
-
+local local_player = require('DOTG1.local_player')
 local ui_frame = imgui.OnFrame(
     function() 
         return true
     end,
     function(self)
         self.HideCursor = true--not select(2, ui.is_any_window_active())
+        
         --ui.draw_ui_here()
         local pool = map.pool
         local DL = imgui.GetBackgroundDrawList()
-        for index, ped in ipairs(pool.bots) do
+        for ped, tag in pairs(pool.bots) do
             if doesCharExist(ped) and isCharOnScreen(ped) then
                 local ped = Vector3D(getCharCoordinates(ped))
                 local pos = imgui.ImVec2(convert3DCoordsToScreen(ped.x, ped.y, ped.z + 1))
                 DL:AddRectFilled(imgui.ImVec2(pos.x - 30 - 1, pos.y - 1), imgui.ImVec2(pos.x + 15 + 2, pos.y + 5 + 2), 0xFF000000, 5)
                 DL:AddRectFilled(imgui.ImVec2(pos.x - 30, pos.y), imgui.ImVec2(pos.x + 15, pos.y + 5), 0xFF0000ff, 5)
+                DL:AddText(pos, 0xFFffffff, tostring(getCharHealth(PLAYER_PED)))
             end
+        end
+
+        -->> abilities
+        local resX, resY = getScreenResolution()
+        imgui.SetNextWindowSize(imgui.ImVec2(resX / 3, resY / 7), imgui.Cond.Always)
+        imgui.SetNextWindowPos(imgui.ImVec2(resX / 2, resY - resY / 7), imgui.Cond.Always, imgui.ImVec2(0.5, 0))
+        if imgui.Begin('ui', _, imgui.WindowFlags.NoDecoration) then
+            local size = imgui.GetWindowSize()
+            local bar_size_x = size.x - size.x / 4
+
+            if imgui.BeginChild('ability_1', imgui.ImVec2(size.y / 2, size.y / 2), true) then
+                imgui.Text('TWO #9')
+                imgui.EndChild()
+            end
+            imgui.SameLine()
+            if imgui.BeginChild('ability_2', imgui.ImVec2(size.y / 2, size.y / 2), true) then
+                imgui.Text('BIG\nSMOKE\'s\nSMOKE')
+                imgui.EndChild()
+            end
+            
+            imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0, 0, 0, 0))
+            imgui.PushStyleColor(imgui.Col.PlotHistogram, imgui.ImVec4(0.64, 0.03, 0.03, 1))
+            imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(0.22, 0.02, 0.02, 1))
+            imgui.SetCursorPosX(size.x / 2 - bar_size_x / 2)
+            imgui.ProgressBar(math.floor(local_player.get('health') * 100 / local_player.get('max_health')) / 100, imgui.ImVec2(bar_size_x, 20))
+            imgui.SameLine()
+            imgui.PopStyleColor(3)
+            imgui.CenterText(tostring(local_player.get('health')))
+            imgui.SameLine(500)
+            imgui.Text('+'..tostring(local_player.get('regen_health')))
+
+            imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0, 0, 0, 0))
+            imgui.PushStyleColor(imgui.Col.PlotHistogram, imgui.ImVec4(0.11, 0.26, 1, 1))
+            imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(0.08, 0.12, 0.33, 1))
+            imgui.SetCursorPosX(size.x / 2 - bar_size_x / 2)
+            imgui.ProgressBar(math.floor(local_player.get('mana') * 100 / local_player.get('max_mana')) / 100, imgui.ImVec2(bar_size_x, 20))
+            imgui.SameLine()
+            imgui.PopStyleColor(3)
+            imgui.CenterText(tostring(local_player.get('mana')))
+            imgui.SameLine(500)
+            imgui.Text('+'..tostring(local_player.get('regen_mana')))
+            
+            imgui.End()
         end
     end
 )
---
----->> Event Handlers
---addEventHandler('onReceiveRpc',     function() net.raknet_handler() end)
---addEventHandler('onSendRpc',        function() net.raknet_handler() end)
---addEventHandler('onReceivePacket',  function() net.raknet_handler() end)
---addEventHandler('onSendPacket',     function() net.raknet_handler() end)
+
+function imgui.CenterText(text)
+    imgui.SetCursorPosX(imgui.GetWindowSize().x / 2 - imgui.CalcTextSize(text).x / 2)
+    imgui.Text(text)
+end
+
+-->> Event Handlers
 addEventHandler('onScriptTerminate', function(scr, quit)
     if scr == thisScript() then
         map.destroy_map()
@@ -56,36 +91,11 @@ addEventHandler('onScriptTerminate', function(scr, quit)
     end
 end)
 
-local CCamera = getModuleHandle('samp.dll') + 0x9B5A0
+
 ffi.cdef([[
     struct CVector { float x, y, z; }
 ]])
 
-local Vector3D = require('vector3d')
-
-local camera = {
-    set_pos = function(vec3)
-        local bs = raknetNewBitStream()
-        raknetBitStreamWriteFloat(bs, vec3.x)
-        raknetBitStreamWriteFloat(bs, vec3.y)
-        raknetBitStreamWriteFloat(bs, vec3.z)
-        raknetEmulRpcReceiveBitStream(157, bs)
-        raknetDeleteBitStream(bs)
-        
-    end,
-    look_at = function(vec3, cutType)
-        local bs = raknetNewBitStream()
-        raknetBitStreamWriteFloat(bs, vec3.x)
-        raknetBitStreamWriteFloat(bs, vec3.y)
-        raknetBitStreamWriteFloat(bs, vec3.z)
-        raknetBitStreamWriteInt8(bs, cutType)
-        raknetEmulRpcReceiveBitStream(158, bs)
-        raknetDeleteBitStream(bs)
-    end,
-    pos = Vector3D(map.pos.x + 120, map.pos.y, map.pos.z),
-    point = Vector3D(map.pos.x, map.pos.y, map.pos.z),
-    zoom = 20
-}
 
 local movement = {
     go_to_coords = false,
@@ -93,66 +103,128 @@ local movement = {
     circles = {}
 }
 
-require('lib.moonloader')
+local tower_ai_test = function()
+    for handle, tag in pairs(map.pool.bots) do
+        if tag:find('tower_(.+)') then
+            local team = tag:match('tower_(.+)')
+            -- find target for tower
+            for target_ped, target_tag in pairs(map.pool.bots) do
+                local target_team = 'undefined'
+                if target_tag:find('(.+)_(.+)') then
+                    local target_type, target_team = target_tag:match('(.+)_(.+)')
+                    if target_type == 'creep' or target_type == 'player' then
+                        if team ~= target_team or true then
+                            local pedX, pedY, pedZ = getCharCoordinates(target_ped)
+                            local targetX, targetY, targetZ = getCharCoordinates(handle)
+                            if getDistanceBetweenCoords3d(pedX, pedY, pedZ, targetX, targetY, targetZ - 13) < 10 then
+                                local tower_s_x, tower_s_y = convert3DCoordsToScreen(pedX, pedY, pedZ)
+                                local target_s_x, target_s_y = convert3DCoordsToScreen(targetX, targetY, targetZ)
+                                renderDrawLine(tower_s_x, tower_s_y, target_s_x, target_s_y, 4, 0xCCff0000)
+                                taskShootAtCoord(handle, targetX, targetY, targetZ, 1000)
+                                --wait(1050)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+local GAME_PAUSED = false
+
+local test_smoke_ability_1 = {
+    name = 'two #9',
+    mana_required = 50,
+    callback = function()
+        lua_thread.create(function()
+            setPlayerModel(Player, 149)
+            local_player.set('bigsmoke_ability_1', true)
+            local_player.set('saved_max_health', local_player.get('max_health'))
+            local_player.set('health', local_player.get('max_health') + 250)
+            local_player.set('ability_active_1', true)
+            local_player.set('ability_on_cooldown_1', true)
+            wait(3000)
+            setPlayerModel(Player, 269)
+            local_player.set('bigsmoke_ability_1', false)
+            local_player.set('health', local_player.get('saved_max_health'))
+            local_player.set('ability_active_1', false)
+            wait(10000)
+            local_player.set('ability_on_cooldown_1', false)
+        end)
+    end
+}
+
+local test_smoke_ability_2 = {
+    name = 'SMOKE',
+    mana_required = 30,
+    callback = function()
+        lua_thread.create(function()
+            local x, y, z = getCharCoordinates(PLAYER_PED)
+            local smoke = createObject(18715, x, y, z)
+            table.insert(map.pool.objects, smoke)
+            wait(3000)
+            deleteObject(smoke)
+        end)
+    end
+}
+
+
 -->> main zalupa
 local go_game_process = false
 function main()
     while not isSampAvailable() do wait(0) end
     map.init()
+    camera.init()
     sampRegisterChatCommand('map', function()
         lua_thread.create(function()
             map.create_map()
             map.teleport_player_to_map()
-            wait(100)
+            wait(500)
             go_game_process = true
         end)
-        
     end)
-    camera.pos.z = camera.pos.z + camera.zoom
-            
 
+    sampRegisterChatCommand('spawncreeps', function()
+        map.spawn_creep_stack(SIDE_GROOVE, 3)
+    end)
+    
     while true do
         wait(0)
-        draw_arrow_down(500, 500, 50, 3, 0xFFffffff)
-        --printStyledString('CAM_POS X/Y: '..camera.pos.x..'/'..camera.pos.y, 50, 7)
+        print(local_player.get('mana'))
         if go_game_process then
-
-            map.bots_ai()
+            local_player.loop()
+            if wasKeyPressed(VK_Q) then
+                local_player.use_ability(test_smoke_ability_1)
+            elseif wasKeyPressed(VK_W) then
+                local_player.use_ability(test_smoke_ability_2)
+            elseif wasKeyPressed(VK_E) then
+            end
+            local curX, curY = getCursorPos()
+            local resX, resY = getScreenResolution()
+            showCursor(not isKeyDown(VK_MBUTTON))
+            camera.update_camera()
+            --map.bots_ai()
             if isKeyDown(VK_LMENU) then
                 map.draw_building_circles()
             end
-            camera.set_pos(camera.pos)
-            camera.look_at(Vector3D(camera.pos.x - 20, camera.pos.y, camera.pos.z - camera.zoom), 0)
-            setCameraPositionUnfixed(0, 3.15)
-
-            -->> camera and movement
-            showCursor(not isKeyDown(VK_MBUTTON))
-
-            -->> point camera at PLAYER on TAB button
-            if isKeyDown(VK_TAB) then
-                local ped = Vector3D(getCharCoordinates(PLAYER_PED))
-                camera.pos.x, camera.pos.y = ped.x + 15, ped.y
-            end
-
-            for i = 0, 20 do
-                if isButtonPressed(Player, i) then
-                    setGameKeyState(i, 0)
+            tower_ai_test()
+            -->> PED CONTROLS 
+            do
+                ---->> disable ped controls
+                for i = 0, 20 do
+                    if isButtonPressed(Player, i) then
+                        setGameKeyState(i, 0)
+                    end
                 end
-            end
 
-            if isKeyDown(VK_MBUTTON) then
-                local mvx, mvy = getPcMouseMovement()
-                camera.pos.y = camera.pos.y - mvx / 10
-                camera.pos.x = camera.pos.x + mvy / 10
-            else
+                ---->> ped movement (RMB)
                 if wasKeyPressed(VK_RBUTTON) then
                     local curX, curY = getCursorPos()
                     local resX, resY = getScreenResolution()
-
                     local posX, posY, posZ = convertScreenCoordsToWorld3D(curX, curY, 700.0)
                     local camX, camY, camZ = camera.pos.x, camera.pos.y, camera.pos.z
                     local result, colpoint = processLineOfSight(camX, camY, camZ, posX, posY, posZ, true, true, false, true, false, false, false)
-
                     if result and colpoint.entity ~= 0 then
                         local normal = colpoint.normal
                         local pos = Vector3D(colpoint.pos[1], colpoint.pos[2], colpoint.pos[3]) - (Vector3D(normal[1], normal[2], normal[3]) * 0.1)
@@ -169,72 +241,40 @@ function main()
                                 radius = 0.5,
                                 alpha = 255
                             })
-                            sampAddChatMessage('ok', -1)
                         end
+                    end
+                end
+
+                ---->> draw movement circles
+                for index, data in ipairs(movement.circles) do
+                    if data.radius > 0 then
+                        map.drawCircleIn3d(data.pos.x, data.pos.y, data.pos.z, data.radius, join_argb(data.alpha, 0, 255, 0), 2, 100) 
+                        local sx, sy = convert3DCoordsToScreen(data.pos.x, data.pos.y, data.pos.z)
+                        local sy = sy - 15 + data.radius * 10
+                        renderDrawBox(sx - 2, sy - 10, 4, 10, join_argb(data.alpha, 0, 255, 0))
+                        renderDrawPolygon(sx, sy, 10, 10, 3, 180, join_argb(data.alpha, 0, 255, 0))
+                        movement.circles[index].radius = bringFloatTo(data.radius, 1, data.start, 0.7)
+                        movement.circles[index].alpha = bringFloatTo(data.alpha, 0, data.start, 0.7)
+                    end
+                end
+
+                if movement.go_to_coords then
+                    local ped = Vector3D(getCharCoordinates(PLAYER_PED))
+                    taskCharSlideToCoord(PLAYER_PED, movement.go_to_coords_coords.x,  movement.go_to_coords_coords.y,  movement.go_to_coords_coords.z, getCharHeading(PLAYER_PED), 1)
+                    setGameKeyState(16, 256)
+                    if getDistanceBetweenCoords3d(ped.x, ped.y, ped.z ,movement.go_to_coords_coords.x,  movement.go_to_coords_coords.y,  movement.go_to_coords_coords.z) <= 1 then
+                        movement.go_to_coords = false
                     end
                 end
             end
 
-            -->> draw movement circles
-            for index, data in ipairs(movement.circles) do
-                drawCircleIn3d(data.pos.x, data.pos.y, data.pos.z, data.radius, join_argb(data.alpha, 0, 255, 0), 2, 100) 
-                local sx, sy = convert3DCoordsToScreen(data.pos.x, data.pos.y, data.pos.z)
-                local sy = sy - 15 + data.radius * 10
-                renderDrawBox(sx - 2, sy - 10, 4, 10, join_argb(data.alpha, 0, 255, 0))
-                renderDrawPolygon(sx, sy, 10, 10, 3, 180, join_argb(data.alpha, 0, 255, 0))
-
-                movement.circles[index].radius = bringFloatTo(data.radius, 1, data.start, 0.7)
-                movement.circles[index].alpha = bringFloatTo(data.alpha, 0, data.start, 0.7)
-                if data.radius == 1 then
-                    --movement.circles[index] = nil
-                    --break
-                end
-                
-            end
-            
-            if movement.go_to_coords then
-                --movement.go_to_coords
-                local ped = Vector3D(getCharCoordinates(PLAYER_PED))
-                taskCharSlideToCoord(PLAYER_PED, movement.go_to_coords_coords.x,  movement.go_to_coords_coords.y,  movement.go_to_coords_coords.z, getCharHeading(PLAYER_PED), 1)
-                setGameKeyState(16, 256)
-                if getDistanceBetweenCoords3d(ped.x, ped.y, ped.z ,movement.go_to_coords_coords.x,  movement.go_to_coords_coords.y,  movement.go_to_coords_coords.z) <= 1 then
-                    movement.go_to_coords = false
-                end
-            end
         end
     end
 end
 
-addEventHandler('onWindowMessage', function(msg, param, param2)
-    if msg == 0x020a --[[ WM_MOUSEWHEEL ]] then
-        local Type = {
-            Down = 4287102976,
-            Up = 7864320
-        }
-        camera.pos.z = param == Type.Down and camera.pos.z + 2 or camera.pos.z - 2
-        camera.pos.x = param == Type.Down and camera.pos.x + 2 or camera.pos.x - 2
-    elseif msg == 0x0200 --[[WM_MOUSEMOVE]] then
-        --print('WM_MM', param, param2) 
-    end
-end)
 
-function draw_arrow_down(x, y, sizeY, width, col)
 
-end
 
-function drawCircleIn3d(x, y, z, radius, color, width, polygons) 
-    local step = math.floor(360 / (polygons or 36)) 
-    local sX_old, sY_old 
-    for angle = 0, 360, step do  
-        local _, sX, sY, sZ, _, _ = convert3DCoordsToScreenEx(radius * math.cos(math.rad(angle)) + x , radius * math.sin(math.rad(angle)) + y , z) 
-        if sZ > 1 then 
-            if sX_old and sY_old then 
-                renderDrawLine(sX, sY, sX_old, sY_old, width, color) 
-            end 
-            sX_old, sY_old = sX, sY 
-        end 
-    end 
-end
 
 function join_argb(a, r, g, b)
     local argb = b  -- b
