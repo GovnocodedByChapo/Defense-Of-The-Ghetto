@@ -51,7 +51,7 @@ MODULE_CAMERA.update_camera = function()
     end
 
     -->> move camera if cursor on screen corner
-    if sampIsCursorActive() then
+    
         local curX, curY = getCursorPos()
         local resX, resY = getScreenResolution()
         if curX <= 5 or curX >= resX - 5 then
@@ -60,13 +60,13 @@ MODULE_CAMERA.update_camera = function()
         if curY <= 5 or curY >= resY - 5 then
             MODULE_CAMERA.pos.x = MODULE_CAMERA.pos.x + (curY <= 5 and -0.5 or 0.5)
         end
-    else
+    
         if isKeyDown(VK_MBUTTON) then
             local mvx, mvy = getPcMouseMovement()
             MODULE_CAMERA.pos.y = MODULE_CAMERA.pos.y - mvx / 10
             MODULE_CAMERA.pos.x = MODULE_CAMERA.pos.x + mvy / 10
         end
-    end
+    
 end
 
 addEventHandler('onWindowMessage', function(msg, param, lParam)

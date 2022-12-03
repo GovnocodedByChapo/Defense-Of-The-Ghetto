@@ -1,9 +1,11 @@
 local Vector3D = require('vector3d')
+local memory = require('memory')
 --local core = require('DOTG1.core')
 MODULE_MAP = {
     required_models = {
-        105, 103, 359, 339, 269, 149
+        103, 105, 107, 149, 269, 339, 359
     },
+    tower_model = 3286, 
     pos = Vector3D(0, 0, 600),
     items = {
         {
@@ -206,12 +208,20 @@ local CREEP_SPAWNPOINT = {
     }
 }
 
+MODULE_MAP.set_hp = function(ped, hp)
+    assert(doesCharExist(ped), 'ped not found (incorrect handle)')
+    local ptr = getCharPointer(ped)
+    memory.setfloat(ptr + 0x540, hp, false)
+    memory.setfloat(ptr + 0x544, hp, false)
+end
 
 MODULE_MAP.spawn_creep_stack = function(side, spawnpoint_index)
     local stack_size, stack_handles = 5, {}
     local spawn = CREEP_SPAWNPOINT[side][spawnpoint_index]
     for i = 1, stack_size do
         local new_bot = createChar(4, side == SIDE_GROOVE and 105 or 104, MODULE_MAP.pos.x + spawn.x, MODULE_MAP.pos.y + spawn.y, MODULE_MAP.pos.z + spawn.z)
+        MODULE_MAP.set_hp(new_bot, 300)
+        print('[DOTG1][DEBUG] map.lua -> spawn_creep_stack: ped created, handle:', new_bot, 'health:', getCharHealth(new_bot))
         giveWeaponToChar(new_bot, 8, 1)
         setCurrentCharWeapon(new_bot, 8)
         table.insert(stack_handles, new_bot)
@@ -222,7 +232,9 @@ MODULE_MAP.spawn_creep_stack = function(side, spawnpoint_index)
         lua_thread.create(function()
             while true do
                 wait(0)
-                taskCharSlideToCoord(new_bot, 0, 0, MODULE_MAP.pos.z + 1, 0, 1)
+                if doesCharExist(new_bot) then
+                    taskCharSlideToCoord(new_bot, 0, 0, MODULE_MAP.pos.z + 1, 0, 1)
+                end
             end
         end)
     end
@@ -231,17 +243,18 @@ end
 
 
 MODULE_MAP.spawn_tower = function(pos, side)
-    local tower_model = 3279
-    local new_object = createObject(tower_model, pos.x, pos.y, pos.z)
-    setObjectCollision(new_object, false)
+    local tower_model = 3286--3279
+    local new_object = createObject(MODULE_MAP.tower_model, pos.x, pos.y, pos.z - 4.5)
+    setObjectCollision(new_object, true)
     setObjectScale(new_object, 0.7)
     table.insert(MODULE_MAP.pool.objects, new_object)
+--
+    --local tower_floor = createObject(19789, pos.x, pos.y, pos.z + 10.5)
+    --setObjectScale(tower_floor, 0)
+    --table.insert(MODULE_MAP.pool.objects, tower_floor)
 
-    local tower_floor = createObject(19789, pos.x, pos.y, pos.z + 10.5)
-    setObjectScale(tower_floor, 0)
-    table.insert(MODULE_MAP.pool.objects, tower_floor)
-
-    local new_bot = createChar(4, side == SIDE_GROOVE and 107 or 103, pos.x, pos.y, pos.z + 13)
+    local new_bot = createChar(4, side == SIDE_GROOVE and 107 or 103, pos.x, pos.y, pos.z + 6)
+    MODULE_MAP.set_hp(new_bot, 1000)
     giveWeaponToChar(new_bot, 35, 50)
     setCurrentCharWeapon(new_bot, 35)
 
@@ -309,7 +322,7 @@ end
 MODULE_MAP.draw_building_circles = function()
     for k, v in ipairs(MODULE_MAP.pool.objects) do
         if doesObjectExist(v) then
-            if getObjectModel(v) == 3279 then
+            if getObjectModel(v) == MODULE_MAP.tower_model then
                 local result, x, y, z = getObjectCoordinates(v)
                 if result then
                     MODULE_MAP.drawCircleIn3d(x, y, z, 10, 0xFFff0000, 3, 100)
@@ -349,6 +362,18 @@ MODULE_MAP.bots_ai = function()
                     end
                 end
             end
+        end
+    end
+end
+
+MODULE_MAP.draw_circle_on_target = function()
+    for handle, tag in pairs(MODULE_MAP.pool.bots) do
+        local curX, curY = getCursorPos()
+        local x, y, z = getCharCoordinates(handle)
+        local pedX, pedY = convert3DCoordsToScreen(x, y, z)
+        if getDistanceBetweenCoords2d(curX, curY, pedX, pedY) < 10 then
+            --MODULE_MAP.drawCircleIn3d(x, y, z, 0.3, 0xFFff0000, 2, 100)
+            drawShadow(3, x, y, z, 0.0, 1, 1, 1, 0, 0) 
         end
     end
 end
