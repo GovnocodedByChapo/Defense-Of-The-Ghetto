@@ -29,6 +29,11 @@ MODULE_CAMERA.init = function()
     MODULE_CAMERA.pos.z = MODULE_CAMERA.pos.z + MODULE_CAMERA.zoom
 end
 
+MODULE_CAMERA.point_camera_to_player = function()
+    local ped = Vector3D(getCharCoordinates(PLAYER_PED))
+    MODULE_CAMERA.pos.x, MODULE_CAMERA.pos.y = ped.x + 15, ped.y
+end
+
 MODULE_CAMERA.update_camera = function()
     MODULE_CAMERA.set_pos(MODULE_CAMERA.pos)
     MODULE_CAMERA.look_at(Vector3D(MODULE_CAMERA.pos.x - 20, MODULE_CAMERA.pos.y, MODULE_CAMERA.pos.z - MODULE_CAMERA.zoom), 0)
@@ -45,28 +50,24 @@ MODULE_CAMERA.update_camera = function()
 
 
     -->> point camera at PLAYER on TAB button
-    if isKeyDown(VK_TAB) then
-        local ped = Vector3D(getCharCoordinates(PLAYER_PED))
-        MODULE_CAMERA.pos.x, MODULE_CAMERA.pos.y = ped.x + 15, ped.y
-    end
+    if isKeyDown(VK_TAB) then MODULE_CAMERA.point_camera_to_player() end
 
     -->> move camera if cursor on screen corner
-    
-        local curX, curY = getCursorPos()
-        local resX, resY = getScreenResolution()
-        if curX <= 5 or curX >= resX - 5 then
-            MODULE_CAMERA.pos.y = MODULE_CAMERA.pos.y + (curX <= 5 and -0.5 or 0.5)
-        end
-        if curY <= 5 or curY >= resY - 5 then
-            MODULE_CAMERA.pos.x = MODULE_CAMERA.pos.x + (curY <= 5 and -0.5 or 0.5)
-        end
-    
-        if isKeyDown(VK_MBUTTON) then
-            local mvx, mvy = getPcMouseMovement()
-            MODULE_CAMERA.pos.y = MODULE_CAMERA.pos.y - mvx / 10
-            MODULE_CAMERA.pos.x = MODULE_CAMERA.pos.x + mvy / 10
-        end
-    
+    local curX, curY = getCursorPos()
+    local resX, resY = getScreenResolution()
+    if curX <= 5 or curX >= resX - 5 then
+        MODULE_CAMERA.pos.y = MODULE_CAMERA.pos.y + (curX <= 5 and -0.5 or 0.5)
+    end
+    if curY <= 5 or curY >= resY - 5 then
+        MODULE_CAMERA.pos.x = MODULE_CAMERA.pos.x + (curY <= 5 and -0.5 or 0.5)
+    end
+
+    -->> move camera with mouse wheel
+    if isKeyDown(VK_MBUTTON) then
+        local mvx, mvy = getPcMouseMovement()
+        MODULE_CAMERA.pos.y = MODULE_CAMERA.pos.y - mvx / 10
+        MODULE_CAMERA.pos.x = MODULE_CAMERA.pos.x + mvy / 10
+    end
 end
 
 addEventHandler('onWindowMessage', function(msg, param, lParam)

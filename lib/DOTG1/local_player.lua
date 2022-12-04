@@ -10,17 +10,29 @@ LOCAL_PLAYER = {
     regen_mana = 1.5,
     regen_health = 2,
     saved = {},
-    regen_last = 0
+    regen_last = 0,
+    cooldown = {
+        [1] = 0,
+        [2] = 0
+    }
 }
 
-LOCAL_PLAYER.use_ability = function(ability)
-    if LOCAL_PLAYER.mana >= ability.mana_required then
-        ability.callback()
-        LOCAL_PLAYER.mana = LOCAL_PLAYER.mana - ability.mana_required
-        return true, 'OK'
-    else
-        sampAddChatMessage('no mana, retard.', -1)
-        return false, 'NO_MANA'
+LOCAL_PLAYER.use_ability = function(ability, index)
+    if ability then
+        if LOCAL_PLAYER.mana >= ability.mana_required then
+            if LOCAL_PLAYER.cooldown[index] + ability.cooldown - os.clock() <= 0 then
+                LOCAL_PLAYER.cooldown[index] = os.clock()
+                ability.callback()
+                LOCAL_PLAYER.mana = LOCAL_PLAYER.mana - ability.mana_required
+                return true, 'OK'
+            else
+                sampAddChatMessage('COOLDOWN, WAIT', -1)
+                return false, 'COOLDOWN'
+            end
+        else
+            sampAddChatMessage('no mana, retard.', -1)
+            return false, 'NO_MANA'
+        end
     end
     return false, 'ACTION_IGNORED'
 end

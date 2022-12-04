@@ -2,8 +2,9 @@ local Vector3D = require('vector3d')
 local memory = require('memory')
 --local core = require('DOTG1.core')
 MODULE_MAP = {
+    CURSOR_POINTER = nil,
     required_models = {
-        103, 105, 107, 149, 269, 339, 359
+        103, 105, 107, 149, 269, 336, 339, 359
     },
     tower_model = 3286, 
     pos = Vector3D(0, 0, 600),
@@ -273,6 +274,8 @@ end
 local TEST_TOWER_BALLS = nil
 
 MODULE_MAP.create_map = function()
+    MODULE_MAP.CURSOR_POINTER = createObject(19605, MODULE_MAP.pos.x, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 10) 
+    --setObjectCollision(MODULE_MAP.CURSOR_POINTER, false)
     MODULE_MAP.spawn_tower(Vector3D(MODULE_MAP.pos.x + 125 + 27, MODULE_MAP.pos.y + 0, MODULE_MAP.pos.z), SIDE_GROOVE) -- groove down 1
     MODULE_MAP.spawn_tower(Vector3D(MODULE_MAP.pos.x + 125 + 27, MODULE_MAP.pos.y - 80, MODULE_MAP.pos.z), SIDE_GROOVE) -- groove down 2
     
@@ -296,6 +299,11 @@ MODULE_MAP.destroy_map = function()
             --core.log('[MAP] DESTROY -> object removed, handle: '..tostring(handle))
         end
     end
+    if doesObjectExist(MODULE_MAP.CURSOR_POINTER) then
+        deleteObject(MODULE_MAP.CURSOR_POINTER)
+    end
+    
+    
 
     -->> Bots
     for handle, tag in pairs(MODULE_MAP.pool.bots) do
