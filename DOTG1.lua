@@ -91,33 +91,35 @@ script_version('1')
 
 require('lib.moonloader')
 local ffi = require('ffi')
+_require = require
+require = function(module, URL)
+    local status, result = pcall(_require, module)
+    if not status then
+        ffi.cdef([[int MessageBoxA(void* hWnd, const char* lpText, const char* lpCaption, unsigned int uType);]])
+        local btn = ffi.C.MessageBoxA(ffi.cast('void*', readMemory(0x00C8CF88, 4, false)), ('Ошибка, модуль "%s" не найден!'..(URL and '\nОткрыть страницу загрузки?' or '')):format(module), thisScript().name..' - error', URL and 0x4 or 0x0)
+        if URL and btn == 6 then os.execute(('explorer "%s"'):format(URL)) end
+        assert(status, result)
+    end
+    return result
+end
+
 local imgui = require('mimgui')
 local Vector3D = require('vector3d')
 local encoding = require('encoding')
+local map = require('DOTG1.map')
+local camera = require('DOTG1.camera')
+local local_player = require('DOTG1.local_player')
+local hero = require('DOTG1.hero')
+local resource = require('DOTG1.resource')
+local ui = require('DOTG1.ui')
+local items = require('DOTG1.items')
+local ai = require('DOTG1.ai')
+
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
---local ui = require('DOTG1.ui')
---local net = core.net
-
 SIDE_GROOVE, SIDE_BALLAS = 0, 1
-local __LIB_STATUS_map, map = pcall(require, 'DOTG1.map')                               assert(__LIB_STATUS_map, 'lib->DOTG1->map.lua not found!')
-local __LIB_STATUS_camera, camera = pcall(require, 'DOTG1.camera')                      assert(__LIB_STATUS_camera, 'lib->DOTG1->camera.lua not found!')
-local __LIB_STATUS_local_player, local_player = pcall(require, 'DOTG1.local_player')    assert(__LIB_STATUS_local_player, 'lib->DOTG1->local_player.lua not found!')
-local __LIB_STATUS_hero, hero = pcall(require, 'DOTG1.hero')                            assert(__LIB_STATUS_hero, 'lib->DOTG1->hero.lua not found!')
-local __LIB_STATUS_resource, resource = pcall(require, 'DOTG1.resource')                assert(__LIB_STATUS_resource, 'lib->DOTG1->resource.lua not found!')
-local __LIB_STATUS_ui, ui = pcall(require, 'DOTG1.ui')                                  assert(__LIB_STATUS_ui, 'lib->DOTG1->ui.lua not found!')
-local items = require('DOTG1.items')
-
-
-
 GAME_STATE = { NONE = 0, MAIN_MENU = 1, HERO_SELECT = 2, IN_GAME = 3 }
-PLAYER = {
-    STATE = GAME_STATE.HERO_SELECT,
-    hero = hero.list[1],
-    camera_mode = 0,
-    debuff = {}
-}
-
+PLAYER = local_player.PLAYER
 
 --==[ INTERFACE ]==--
 imgui.OnInitialize(function()
@@ -127,169 +129,35 @@ end)
 
 local ui_frame = imgui.OnFrame(
     function() 
-        return PLAYER.STATE ~= GAME_STATE.NONE
+        return local_player.PLAYER.STATE ~= GAME_STATE.NONE
     end,
     function(self)
         self.HideCursor = PLAYER.STATE ~= GAME_STATE.MAIN_MENU and PLAYER.STATE ~= GAME_STATE.HERO_SELECT
         local DL = imgui.GetBackgroundDrawList()
-
-        ui.draw_health_bars(DL)
-
+       
         -->> Main menu
         if PLAYER.STATE == GAME_STATE.MAIN_MENU or PLAYER.STATE == GAME_STATE.HERO_SELECT then
-            local size = imgui.ImVec2(getScreenResolution())
-            imgui.SetNextWindowSize(size, imgui.Cond.Always)
-            imgui.SetNextWindowPos(imgui.ImVec2(0, 0), imgui.Cond.Always, imgui.ImVec2(0, 0))
-            if imgui.Begin('dotg1_main_menu', _, imgui.WindowFlags.NoDecoration) then
-                
-                imgui.SetCursorPosY(size.y / 5)
-                imgui.PushFont(ui.font[40])
-                imgui.CenterText('Defense Of The Ghetto')
-                imgui.PopFont()
-                imgui.SetCursorPosY(size.y / 5 + 30)
-                imgui.CenterText('by chapo')
-
-                if PLAYER.STATE == GAME_STATE.MAIN_MENU then
-                    local PLAY_BUTTON_SIZE = imgui.ImVec2(size.x / 8, size.y / 13)
-                    imgui.SetCursorPos(imgui.ImVec2(size.x - PLAY_BUTTON_SIZE.x - 25, size.y - PLAY_BUTTON_SIZE.y - 25))
-
-                    imgui.PushFont(ui.font[20])
-                    if imgui.Button('PLAY', PLAY_BUTTON_SIZE) then
-                        PLAYER.STATE = GAME_STATE.HERO_SELECT
-                    end
-                    imgui.PopFont()
-                else
-                    --imgui.Separator()
-                    imgui.SetCursorPosY(size.y / 5 + 50)
-                    imgui.PushFont(ui.font[40])
-                    imgui.CenterText('CHOOSE YOUR HERO')
-                    imgui.PopFont()
-
-                    local start_pos = imgui.ImVec2(size.x / 2 - ((size.x / 8) / 2) * #hero.list, size.y / 2 - (size.y / 3) / 2)
-                    imgui.SetCursorPos(start_pos)
-                    for index, _hero in ipairs(hero.list) do
-                        if imgui.BeginChild('hero_select_'.._hero.name, imgui.ImVec2(size.x / 8, size.y / 3), true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse) then
-                            local image_size = imgui.ImVec2(size.x / 8 - 10, size.y / 3 - 10)
-                            
-                            imgui.SetCursorPos(imgui.ImVec2(5, 5))
-                            imgui.InvisibleButton('hero_select_'.._hero.name..'_HOVER_ZONE', imgui.ImVec2(size.x / 8 - 10, size.y / 3 - 10))
-                            if imgui.IsItemHovered() then
-                                image_size = imgui.ImVec2(size.x / 8, size.y / 3)
-                            end
-                            imgui.SetCursorPos(imgui.IsItemHovered() and imgui.ImVec2(0, 0) or imgui.ImVec2(5, 5))
-                            imgui.Image(ui.image.hero[1].icon, image_size)
-                            if imgui.IsItemHovered() then
-                                imgui.BeginTooltip()
-                                imgui.Text(_hero.name)
-                                imgui.EndTooltip()
-                                
-                            end
-                            if imgui.IsMouseClicked(0) then
-                                PLAYER.hero = hero.list[index]
-                                PLAYER.STATE = GAME_STATE.IN_GAME
-                                
-                                local_player.max_health = PLAYER.hero.max_health
-                                local_player.max_mana = PLAYER.hero.max_mana
-                                local_player.health = PLAYER.hero.max_health
-                                local_player.mana = PLAYER.hero.max_mana
-
-                                setPlayerModel(Player, PLAYER.hero.model)
-                                map.create_map()
-                                map.set_hp(PLAYER_PED, local_player.get('max_health'))
-                               
-                                setCharCoordinates(PLAYER_PED, 154, 5, 601)
-                                giveWeaponToChar(PLAYER_PED, PLAYER.hero.weapon, PLAYER.hero.weapon_ammo)
-                                setCurrentCharWeapon(PLAYER_PED, PLAYER.hero.weapon)
-                                camera.point_camera_to_player()
-                            end
-                            imgui.EndChild()
-                        end  
-                        if index < #hero.list then
-                            imgui.SameLine()
-                        end
-                    end
-                end
-                imgui.End()
-            end
+            ui.draw_main_menu(function(index)
+                PLAYER.hero = hero.list[index]
+                PLAYER.STATE = GAME_STATE.IN_GAME   
+                local_player.max_health = PLAYER.hero.max_health
+                local_player.max_mana = PLAYER.hero.max_mana
+                local_player.health = PLAYER.hero.max_health
+                local_player.mana = PLAYER.hero.max_mana
+                setPlayerModel(Player, PLAYER.hero.model)
+                map.create_map()
+                map.set_hp(PLAYER_PED, local_player.get('max_health'))
+                setCharCoordinates(PLAYER_PED, 154, 5, 601)
+                giveWeaponToChar(PLAYER_PED, PLAYER.hero.weapon, PLAYER.hero.weapon_ammo)
+                setCurrentCharWeapon(PLAYER_PED, PLAYER.hero.weapon)
+                camera.point_camera_to_player()
+            end)
         end
 
         -->> abilities
         if PLAYER.STATE == GAME_STATE.IN_GAME then
-            local resX, resY = getScreenResolution()
-            imgui.SetNextWindowSize(imgui.ImVec2(resX / 3, resY / 7), imgui.Cond.Always)
-            imgui.SetNextWindowPos(imgui.ImVec2(resX / 2, resY - resY / 7), imgui.Cond.Always, imgui.ImVec2(0.5, 0))
-            if imgui.Begin('dotg1_hud', _, imgui.WindowFlags.NoDecoration) then
-                local size = imgui.GetWindowSize()
-                local bar_size_x = size.x - 10 - size.y
-
-                imgui.SetCursorPos(imgui.ImVec2(10, 10))
-                if imgui.BeginChild('player_image', imgui.ImVec2(size.y - 20, size.y - 20), true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse) then
-                    imgui.SetCursorPos(imgui.ImVec2(0, 0))
-                    imgui.Image(ui.image.hero[1].icon, imgui.ImVec2(size.y - 20, size.y - 20))
-                    imgui.EndChild()
-                end
-                if imgui.IsItemClicked() then
-                    camera.point_camera_to_player()
-                end
-                imgui.SameLine()
-                for index, ability in ipairs(PLAYER.hero.abilities) do
-                    if imgui.BeginChild('ability_'..tostring(index), imgui.ImVec2(size.y / 2, size.y / 2), true) then
-                        imgui.TextWrapped(tostring(ability.name))
-
-                        local cd = local_player.cooldown[index] + ability.cooldown - os.clock()
-                        if cd >= 0 then
-                            imgui.Text('CD: '..tostring(local_player.cooldown[index] + ability.cooldown - os.clock()))
-                        end
-                        imgui.EndChild()
-                    end
-                    if imgui.IsItemHovered() then
-                        imgui.BeginTooltip()
-                        imgui.Text(ability.name..'\n\n'..u8(ability.tooltip))
-                        imgui.EndTooltip()
-                    end
-                    if index < #PLAYER.hero.abilities then
-                        imgui.SameLine()
-                    end
-                end
-
-                
-
-                imgui.SetCursorPos(imgui.ImVec2(10 + size.y - 20 + 10, size.y / 1.6))
-
-                imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0, 0, 0, 0))
-                imgui.PushStyleColor(imgui.Col.PlotHistogram, imgui.ImVec4(0.64, 0.03, 0.03, 1))
-                imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(0.22, 0.02, 0.02, 1))
-                --imgui.SetCursorPosX(size.x / 2 - bar_size_x / 2)
-                imgui.ProgressBar(math.floor(local_player.get('health') * 100 / local_player.get('max_health')) / 100, imgui.ImVec2(bar_size_x, 20))
-                imgui.SameLine()
-                imgui.PopStyleColor(3)
-                imgui.CenterText(tostring(local_player.get('health')))
-                imgui.SameLine(500)
-                imgui.Text('+'..tostring(local_player.get('regen_health')))
-
-                imgui.SetCursorPos(imgui.ImVec2(10 + size.y - 20 + 10, size.y / 1.6 + 25))
-                imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0, 0, 0, 0))
-                imgui.PushStyleColor(imgui.Col.PlotHistogram, imgui.ImVec4(0.11, 0.26, 1, 1))
-                imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(0.08, 0.12, 0.33, 1))
-                imgui.ProgressBar(math.floor(local_player.get('mana') * 100 / local_player.get('max_mana')) / 100, imgui.ImVec2(bar_size_x, 20))
-                imgui.SameLine()
-                imgui.PopStyleColor(3)
-                imgui.CenterText(tostring(local_player.get('mana')))
-                imgui.SameLine(500)
-                imgui.Text('+'..tostring(local_player.get('regen_mana')))
-
-                imgui.SetCursorPos(imgui.ImVec2(size.x - 10 - 40, 10))
-                if imgui.Button('CAM', imgui.ImVec2(40, 20)) then
-                    PLAYER.camera_mode = PLAYER.camera_mode == 0 and 1 or 0
-                    if PLAYER.camera_mode == 0 then
-                        camera.point_camera_to_player()
-                    elseif PLAYER.camera_mode == 1 then
-                        restoreCameraJumpcut()
-                    end
-                end
-
-                imgui.End()
-            end
+            ui.draw_game_hud()
+            ui.draw_health_bars(DL)
         end
     end
 )
@@ -308,7 +176,7 @@ addEventHandler('onScriptTerminate', function(scr, quit)
 end)
 
 addEventHandler('onWindowMessage', function(msg, key)
-    if PLAYER.STATE == GAME_STATE.IN_GAME and msg == 0x0100 and not sampIsChatInputActive() then
+    if false and PLAYER.STATE == GAME_STATE.IN_GAME and msg == 0x0100 and not sampIsChatInputActive() then
         if key == VK_Q then
             local_player.use_ability(PLAYER.hero.abilities[1], 1)
         elseif key == VK_W then
@@ -329,64 +197,7 @@ local movement = {
 
 
 
-local tower_ai_test = function()
-    lua_thread.create(function()
-        while true do
-            wait(1000)
-            --wait(2500)
-            for handle, tag in pairs(map.pool.bots) do
-                if tag:find('tower_(.+)') then
-                    local team = tag:match('tower_(.+)')
-                    -- find target for tower
-                    for target_ped, target_tag in pairs(map.pool.bots) do
-                        local target_team = 'undefined'
-                        if target_tag:find('(.+)_(.+)') then
-                            local target_type, target_team = target_tag:match('(.+)_(.+)')
-                            if target_type == 'creep' or target_type == 'player' then
-                                if team ~= target_team or true then
-                                    local pedX, pedY, pedZ = getCharCoordinates(handle)
-                                    local targetX, targetY, targetZ = getCharCoordinates(target_ped)
-                                    if getDistanceBetweenCoords3d(pedX, pedY, pedZ, targetX, targetY, targetZ) < 10 then
-                                        local tower_s_x, tower_s_y = convert3DCoordsToScreen(pedX, pedY, pedZ)
-                                        local target_s_x, target_s_y = convert3DCoordsToScreen(targetX, targetY, targetZ)
-                                        renderDrawLine(tower_s_x, tower_s_y, target_s_x, target_s_y, 4, 0xCCff0000)
-                                        local start = os.clock()
-                                        local rocket = createObject(345, pedX, pedY, pedZ)
-                                        setObjectCollision(rocket, false)
-                                        table.insert(map.pool.objects, rocket)
 
-                                        
-                                        while start + 3 - os.clock() > 0 do
-                                            wait(0) 
-                                            if doesObjectExist(rocket) then
-                                                
-                                                local result, rocketX, rocketY, rocketZ = getObjectCoordinates(rocket)
-                                                if result then
-                                                    if getDistanceBetweenCoords3d(rocketX, rocketY, rocketZ, targetX, targetY, targetZ) < 0.5 then
-                                                        deleteObject(rocket)
-                                                        if target_ped == PLAYER_PED then
-                                                            local_player.health = local_player.health - 50
-                                                            sampAddChatMessage('damage deal', -1)
-                                                        else 
-                                                            map.set_hp(target_ped, getCharHealth(target_ped) - 50)
-                                                        end
-                                                    else
-                                                        slideObject(rocket, targetX, targetY, targetZ, 0.1, 0.1, 0.1, false)
-                                                    end
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end 
-    end)
-    
-end
 
 sp = function()
     --local no = createObject(11696, map.pos.x - 300 - 5, map.pos.y - 125, map.pos.z - 1)
@@ -433,8 +244,6 @@ sp = function()
     table.insert(map.pool.objects, f)
 end 
 
--->> main zalupa
-local go_game_process = false
 function main()
     while not isSampAvailable() do wait(0) end
     sampRegisterChatCommand('manaref', function()
@@ -443,6 +252,7 @@ function main()
     -->> INIT
     map.init()
     camera.init()
+    --ai.tower_loop()
 
     sampRegisterChatCommand('dota', function()
         PLAYER.STATE = GAME_STATE.MAIN_MENU
@@ -465,7 +275,7 @@ function main()
         map.spawn_creep_stack(SIDE_GROOVE, 3)
     end)
     sp()
-    tower_ai_test()
+    
     while true do
         wait(0)
         if PLAYER.STATE == GAME_STATE.IN_GAME then
@@ -508,7 +318,7 @@ function main()
                 ---->> disable ped controls
                 for i = 0, 20 do
                     if isButtonPressed(Player, i) then
-                        setGameKeyState(i, 0)
+                        --setGameKeyState(i, 0)
                     end
                 end
 
