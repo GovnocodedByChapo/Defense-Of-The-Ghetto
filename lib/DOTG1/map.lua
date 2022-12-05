@@ -1,5 +1,6 @@
 local Vector3D = require('vector3d')
 local memory = require('memory')
+
 --local core = require('DOTG1.core')
 MODULE_MAP = {
     CURSOR_POINTER = nil,
@@ -105,6 +106,7 @@ MODULE_MAP = {
 
 
     -->> LINES TREES
+    --[[
     {
         comment = 'tree_groove_ez_1',
         model = 16061,
@@ -178,7 +180,7 @@ MODULE_MAP = {
         scale = 0.5,
         dont_use_offset = true
     },
-        
+    ]]
     },
     pool = {
         objects = {},
@@ -208,6 +210,10 @@ local CREEP_SPAWNPOINT = {
         Vector3D(10, 0, 0)
     }
 }
+
+MODULE_MAP.apply_hero_to_player = function()
+
+end
 
 MODULE_MAP.set_hp = function(ped, hp)
     assert(doesCharExist(ped), 'ped not found (incorrect handle)')

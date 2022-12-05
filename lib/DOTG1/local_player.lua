@@ -1,6 +1,12 @@
-LOCAL_PLAYER = {}
 
+GAME_STATE = { NONE = 0, MAIN_MENU = 1, HERO_SELECT = 2, IN_GAME = 3 }
 LOCAL_PLAYER = {
+    PLAYER = {
+        STATE = GAME_STATE.NONE,
+        hero = 1,
+        camera_mode = 0,
+        debuff = {}
+    },
     v = {},
     max_health = 500,
     health = 500,
@@ -16,6 +22,7 @@ LOCAL_PLAYER = {
         [2] = 0
     }
 }
+
 
 LOCAL_PLAYER.use_ability = function(ability, index)
     if ability then
