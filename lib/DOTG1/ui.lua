@@ -11,12 +11,22 @@ local hero = require('DOTG1.hero')
 local resource = require('DOTG1.resource')
 local camera = require('DOTG1.camera')
 local local_player = require('DOTG1.local_player')
+local items = require('DOTG1.items')
+local encoding = require('encoding')
+encoding.default = 'CP1251'
+u8 = encoding.UTF8
 MODULE_UI = { 
     font = {},
     image = {
         hero = {}
     } 
 }
+
+function imgui.CenterText(text)
+    imgui.SetCursorPosX(imgui.GetWindowSize().x / 2 - imgui.CalcTextSize(text).x / 2)
+    imgui.Text(text)
+end
+
 
 MODULE_UI.draw_main_menu = function(hero_select_callback)
     local size = imgui.ImVec2(getScreenResolution())
@@ -179,27 +189,90 @@ MODULE_UI.init = function()
             MODULE_UI.image.hero[index].icon = imgui.CreateTextureFromFileInMemory(imgui.new('const char*', player_image_base85), #player_image_base85)
         end
     end
+
+    -->> items icons 
+    for k, v in pairs(items.list) do
+        if resource.item_icon[k] then
+            local base85 = resource.item_icon[k]
+            items.list[k].icon = imgui.CreateTextureFromFileInMemory(imgui.new('const char*', base85), #base85)
+            sampAddChatMessage('loaded image '..k, -1)
+        end
+    end
+end
+
+MODULE_UI.draw_pause = function()
+
+end
+
+MODULE_UI.draw_shop_menu = function()
+    local resX, resY = getScreenResolution()
+    local sSize = imgui.ImVec2(resX / 4, resY / 1.3)
+    imgui.SetNextWindowPos(imgui.ImVec2(resX, resY - 100), imgui.Cond.Always, imgui.ImVec2(1, 1))
+    imgui.SetNextWindowSize(sSize, imgui.Cond.Always)
+    if imgui.Begin('DOTG1_shop', _, imgui.WindowFlags.NoMove + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoTitleBar) then
+        local i = 0
+        local icon_size = imgui.ImVec2(100, 75)
+        for k, v in pairs(items.list) do
+            i = i + 1
+            if v.icon then
+                imgui.Image(v.icon, icon_size)
+            else 
+                imgui.Button(k, icon_size)
+            end
+            if imgui.IsItemClicked() then
+                items.buy_item(k)
+            end
+            if imgui.IsItemHovered() then
+                imgui.BeginTooltip()
+                imgui.Text(('Price: %s\nDescription: %s'):format(v.price, u8(v.description or 'NONE')))
+                imgui.EndTooltip()
+            end
+            if i ~= 3 then
+                imgui.SameLine()
+            end
+        end
+        imgui.End()
+    end
+end
+
+MODULE_UI.draw_shop_button = function()
+    if imgui.Begin('DOTG1_shop_button', nil, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoMove) then
+        local resX, resY = getScreenResolution()
+        local s = imgui.GetWindowSize()
+        imgui.SetWindowPosVec2(imgui.ImVec2(resX - s.x - 10, resY - s.y - 10))
+        if imgui.Button('$'..tostring(local_player.money)) then
+            items.shop_menu = not items.shop_menu
+        end
+        imgui.End()
+    end
 end
 
 MODULE_UI.draw_health_bars = function(DL)
     for handle, tag in pairs(map.pool.bots) do
-        local max_hp = 100
+        local max_hp = handle == PLAYER_PED and local_player.max_health or 100
         if tag:find('creep_') then
             max_hp = 300
         end
         if doesCharExist(handle) and isCharOnScreen(handle) then
             local ped = Vector3D(getCharCoordinates(handle))
-            local _pos = imgui.ImVec2(convert3DCoordsToScreen(ped.x, ped.y, ped.z + 1))
-            local pos = imgui.ImVec2(_pos.x - 30, _pos.y)
+
+            local player = imgui.ImVec2(convert3DCoordsToScreen(ped.x, ped.y, ped.z + 1))
+
+            local _start = imgui.ImVec2(player.x - 30, player.y - 3)
+            local _end = imgui.ImVec2(player.x + 30, player.y + 3)
+
+            
             local result, hp = pcall(getCharHealth, handle)
             if result then
-                DL:AddRectFilled(imgui.ImVec2(pos.x - 30 - 1, pos.y - 1), imgui.ImVec2(pos.x + 15 + 2, pos.y + 5 + 2), 0xCC000000, 5)
-                DL:AddRectFilled(pos, imgui.ImVec2(pos.x + math.floor(hp * 100 / max_hp) / 100, pos.y + 5), 0xFF0000ff, 5)
+                DL:AddRectFilled(_start, _end, 0xCC000000, 5)
+                local health_end = (hp <= max_hp and hp or max_hp) * ((_end.x - _start.x) / max_hp )
+                DL:AddRectFilled(imgui.ImVec2(_start.x + 1, _start.y + 1), imgui.ImVec2(_start.x + health_end - 1, _end.y - 1), 0xFF0000ff, 5)
+                
             end
-
+            DL:AddText(imgui.ImVec2(_end.x, _start.y), 0xFFffffff, result and tostring(hp)..'/'..tostring(max_hp) or 'none, '..tostring(ped))
             --math.floor(hp * 100 / max_hp)
 
-            DL:AddText(pos, 0xFFffffff, result and tostring(hp) or 'none, '..tostring(ped))
+           
         end
     end
 end

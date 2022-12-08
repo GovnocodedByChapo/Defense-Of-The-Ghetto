@@ -20,7 +20,9 @@ LOCAL_PLAYER = {
     cooldown = {
         [1] = 0,
         [2] = 0
-    }
+    },
+    money = 600,
+    items = {}
 }
 
 
@@ -56,6 +58,7 @@ end
 
 LOCAL_PLAYER.loop = function()
     if LOCAL_PLAYER.get('regen_last') + 1 < os.clock() then
+        LOCAL_PLAYER.money = LOCAL_PLAYER.money + 2
         LOCAL_PLAYER.set('regen_last', os.clock())
         local new_health, new_mana = LOCAL_PLAYER.get('health') + LOCAL_PLAYER.get('regen_health'), LOCAL_PLAYER.get('mana') + LOCAL_PLAYER.get('regen_mana')
         if new_health <= LOCAL_PLAYER.get('max_health') then

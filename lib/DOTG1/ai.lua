@@ -30,6 +30,7 @@ AI.tower_loop = function()
                                         local rocket = createObject(345, pedX, pedY, pedZ)
                                         setObjectCollision(rocket, false)
                                         table.insert(map.pool.objects, rocket)
+                                        
                                         while start + 3 - os.clock() > 0 do
                                             wait(0) 
                                             if doesObjectExist(rocket) then

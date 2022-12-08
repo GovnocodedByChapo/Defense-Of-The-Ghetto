@@ -215,6 +215,48 @@ MODULE_MAP.apply_hero_to_player = function()
 
 end
 
+MODULE_MAP.spawn_background = function()
+    for i = 1, 8 do
+        local no = createObject(17031, MODULE_MAP.pos.x - 227, MODULE_MAP.pos.y - 200 + 50 * i, MODULE_MAP.pos.z - 1)
+        setObjectScale(no, 1.5)
+        table.insert(MODULE_MAP.pool.objects, no)
+    end
+    for i = 1, 8 do
+        local no = createObject(17031, MODULE_MAP.pos.x + 227, MODULE_MAP.pos.y - 200 + 50 * i, MODULE_MAP.pos.z - 1)
+        setObjectHeading(no, 180)
+        setObjectScale(no, 1.5)
+        table.insert(MODULE_MAP.pool.objects, no)
+    end
+    for i = 1, 8 do
+        local no = createObject(17031, MODULE_MAP.pos.x - 200 + 50 * i, MODULE_MAP.pos.y - 227, MODULE_MAP.pos.z - 1)
+        setObjectHeading(no, 90)
+        setObjectScale(no, 1.5)
+        table.insert(MODULE_MAP.pool.objects, no)
+    end
+    for i = 1, 8 do
+        local no = createObject(17031, MODULE_MAP.pos.x - 200 + 50 * i, MODULE_MAP.pos.y + 227, MODULE_MAP.pos.z - 1)
+        setObjectHeading(no, 270)
+        setObjectScale(no, 1.5)
+        table.insert(MODULE_MAP.pool.objects, no)
+    end
+
+    local f = createObject(6965, MODULE_MAP.pos.x, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 1)
+    table.insert(MODULE_MAP.pool.objects, f)
+
+    local f = createObject(9833, MODULE_MAP.pos.x - 0.5, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 9  )
+    table.insert(MODULE_MAP.pool.objects, f)
+
+    local f = createObject(348, MODULE_MAP.pos.x - 1.5, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 15)
+    setObjectRotation(f, 0, 270+45, 0)
+    setObjectScale(f, 15)
+    table.insert(MODULE_MAP.pool.objects, f)
+
+    local f = createObject(348, MODULE_MAP.pos.x + 1.5, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 15)
+    setObjectRotation(f, 0, 270 + 45, 180)
+    setObjectScale(f, 15)
+    table.insert(MODULE_MAP.pool.objects, f)
+end
+
 MODULE_MAP.set_hp = function(ped, hp)
     assert(doesCharExist(ped), 'ped not found (incorrect handle)')
     local ptr = getCharPointer(ped)
@@ -228,7 +270,7 @@ MODULE_MAP.spawn_creep_stack = function(side, spawnpoint_index)
     for i = 1, stack_size do
         local new_bot = createChar(4, side == SIDE_GROOVE and 105 or 104, MODULE_MAP.pos.x + spawn.x, MODULE_MAP.pos.y + spawn.y, MODULE_MAP.pos.z + spawn.z)
         MODULE_MAP.set_hp(new_bot, 300)
-        print('[DOTG1][DEBUG] map.lua -> spawn_creep_stack: ped created, handle:', new_bot, 'health:', getCharHealth(new_bot))
+        print('[DOTG1][DEBUG] MODULE_MAP.lua -> spawn_creep_stack: ped created, handle:', new_bot, 'health:', getCharHealth(new_bot))
         giveWeaponToChar(new_bot, 8, 1)
         setCurrentCharWeapon(new_bot, 8)
         table.insert(stack_handles, new_bot)
@@ -253,23 +295,22 @@ MODULE_MAP.spawn_tower = function(pos, side)
     local tower_model = 3286--3279
     local new_object = createObject(MODULE_MAP.tower_model, pos.x, pos.y, pos.z - 4.5)
     setObjectCollision(new_object, true)
-    setObjectScale(new_object, 0.7)
+    setObjectScale(new_object, 1)
     table.insert(MODULE_MAP.pool.objects, new_object)
---
-    --local tower_floor = createObject(19789, pos.x, pos.y, pos.z + 10.5)
-    --setObjectScale(tower_floor, 0)
-    --table.insert(MODULE_MAP.pool.objects, tower_floor)
 
+    --local new_object = createObject(18848, pos.x, pos.y, pos.z - 4.5)
+    --setObjectCollision(new_object, true)
+    --setObjectScale(new_object, 1)
+    --table.insert(MODULE_MAP.pool.objects, new_object)
+    
+    
     local new_bot = createChar(4, side == SIDE_GROOVE and 107 or 103, pos.x, pos.y, pos.z + 6)
     MODULE_MAP.set_hp(new_bot, 1000)
     giveWeaponToChar(new_bot, 35, 50)
     setCurrentCharWeapon(new_bot, 35)
-
-    --attachCharToObject(new_bot, tower_floor, 0, 0, 2, 0, 0, 0)  -- 04F4
     setCharHeading(new_bot, 180)
-
-
     MODULE_MAP.pool.bots[new_bot] = 'tower_'..(side == 0 and 'groove' or 'ballas')
+    
     return new_object, new_bot
 end
 
@@ -284,7 +325,7 @@ MODULE_MAP.create_map = function()
     --setObjectCollision(MODULE_MAP.CURSOR_POINTER, false)
     MODULE_MAP.spawn_tower(Vector3D(MODULE_MAP.pos.x + 125 + 27, MODULE_MAP.pos.y + 0, MODULE_MAP.pos.z), SIDE_GROOVE) -- groove down 1
     MODULE_MAP.spawn_tower(Vector3D(MODULE_MAP.pos.x + 125 + 27, MODULE_MAP.pos.y - 80, MODULE_MAP.pos.z), SIDE_GROOVE) -- groove down 2
-    
+    MODULE_MAP.spawn_background()
     for index, data in ipairs(MODULE_MAP.items) do
         local opos = data.dont_use_offset == nil and Vector3D(MODULE_MAP.pos.x + data.pos.x, MODULE_MAP.pos.y + data.pos.y, MODULE_MAP.pos.z + data.pos.z) or Vector3D(data.pos.x, data.pos.y, data.pos.z) 
         local new_object = createObject(data.model, opos.x, opos.y, opos.z)
@@ -322,7 +363,7 @@ end
 
 --[[
 MODULE_MAP.spawn_bot = function(side)
-    assert(core[side], 'map.lua -> spawn_bot(): incorrect side name, use core.SIDE.GROOVE (0) or core.SIDE.BALLAS (1)')
+    assert(core[side], 'MODULE_MAP.lua -> spawn_bot(): incorrect side name, use core.SIDE.GROOVE (0) or core.SIDE.BALLAS (1)')
     local new_bot = createChar(4, math.random(MODULE_MAP.bot_models[side]), MODULE_MAP.pos.x + MODULE_MAP.bot_spawn_pos[side].x, MODULE_MAP.pos.y + MODULE_MAP.bot_spawn_pos[side].y, MODULE_MAP.pos.z + MODULE_MAP.bot_spawn_pos[side].z)
     --table.insert(MODULE_MAP.pool.bots, new_bot)
 end
@@ -413,6 +454,16 @@ MODULE_MAP.init = function()
             loadAllModelsNow()
         end
     end
+end
+
+MODULE_MAP.get_distance_from_pointer = function(x, y, z)
+    if doesObjectExist(MODULE_MAP.CURSOR_POINTER) then
+        local result, px, py, pz = getObjectCoordinates(MODULE_MAP.CURSOR_POINTER)
+        if result then
+            return getDistanceBetweenCoords3d( px, py, pz, x, y, z )
+        end
+    end
+    return -1
 end
 
 MODULE_MAP.environment = [[]]
