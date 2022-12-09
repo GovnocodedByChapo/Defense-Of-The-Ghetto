@@ -105,6 +105,7 @@ end
 
 local imgui = require('mimgui')
 local Vector3D = require('vector3d')
+--local core = require('DOTG1.core')
 local map = require('DOTG1.map')
 local camera = require('DOTG1.camera')
 local local_player = require('DOTG1.local_player')
@@ -114,9 +115,9 @@ local ui = require('DOTG1.ui')
 local items = require('DOTG1.items')
 local ai = require('DOTG1.ai')
 local movement = require('DOTG1.movement')
-SIDE_GROOVE, SIDE_BALLAS = 0, 1
-GAME_STATE = { NONE = 0, MAIN_MENU = 1, HERO_SELECT = 2, IN_GAME = 3, IN_GAME_PAUSED = 4 }
-PLAYER = local_player.PLAYER
+
+SIDE_GROOVE, SIDE_BALLAS, GAME_STATE = 0, 1, { NONE = 0, MAIN_MENU = 1, HERO_SELECT = 2, IN_GAME = 3, IN_GAME_PAUSED = 4 }
+--PLAYER = local_player.PLAYER
 
 --==[ INTERFACE ]==--
 imgui.OnInitialize(function()
@@ -136,19 +137,21 @@ local ui_frame = imgui.OnFrame(
         -->> Main menu
         if local_player.PLAYER.STATE == GAME_STATE.MAIN_MENU or local_player.PLAYER.STATE == GAME_STATE.HERO_SELECT then
             ui.draw_main_menu(function(index)
+                local_player.PLAYER.hero_index = index
                 local_player.PLAYER.hero = hero.list[index]
                 local_player.PLAYER.STATE = GAME_STATE.IN_GAME   
-                local_player.max_health = PLAYER.hero.max_health
-                local_player.max_mana = PLAYER.hero.max_mana
-                local_player.health = PLAYER.hero.max_health
-                local_player.mana = PLAYER.hero.max_mana
-                setPlayerModel(Player, PLAYER.hero.model)
-                map.create_map()
+                local_player.max_health = local_player.PLAYER.hero.max_health
+                local_player.max_mana = local_player.PLAYER.hero.max_mana
+                local_player.health = local_player.PLAYER.hero.max_health
+                local_player.mana = local_player.PLAYER.hero.max_mana
+                setPlayerModel(Player, local_player.PLAYER.hero.model)
+                --map.create_map()
                 map.set_hp(PLAYER_PED, local_player.max_health)
                 setCharCoordinates(PLAYER_PED, 154, 5, 601)
-                giveWeaponToChar(PLAYER_PED, PLAYER.hero.weapon, PLAYER.hero.weapon_ammo)
-                setCurrentCharWeapon(PLAYER_PED, PLAYER.hero.weapon)
+                giveWeaponToChar(PLAYER_PED, local_player.PLAYER.hero.weapon, local_player.PLAYER.hero.weapon_ammo)
+                setCurrentCharWeapon(PLAYER_PED, local_player.PLAYER.hero.weapon)
                 camera.point_camera_to_player()
+                map.load_map(local_player.PLAYER.selected_map, local_player.PLAYER.team)
             end)
         end
 
@@ -201,6 +204,7 @@ addEventHandler('onScriptTerminate', function(scr, quit)
     if scr == thisScript() then
         map.destroy_map()
         if not quit then
+            --core.log('[FATAR ERROR] Script crashed (quit = false)')
             thisScript():reload()
         end
     end
@@ -226,7 +230,7 @@ addEventHandler('onWindowMessage', function(msg, key)
     end
 end)
 
-
+-->> Inits and loops
 function main()
     while not isSampAvailable() do wait(0) end
     sampRegisterChatCommand('dota', function()
@@ -246,15 +250,28 @@ function main()
         end)
     end)
 
+    sampRegisterChatCommand('dotg.loadmap', function(arg)
+        if doesFileExist(getWorkingDirectory()..'\\lib\\DOTG1\\maps\\'..arg) then
+            local F = io.open(getWorkingDirectory()..'\\lib\\DOTG1\\maps\\'..arg, 'r')
+            local json = F:read('*all')
+            F:close()
+            map.load_map(json, SIDE_GROOVE)
+        else
+            sampAddChatMessage('map not found!', -1)
+        end
+    end)
+
     sampRegisterChatCommand('spawncreeps', function()
         map.spawn_creep_stack(SIDE_GROOVE, 3)
     end)
     
     -->> INIT DOTG1
+    --core.log('Initializing modules...')
     map.init()
     camera.init()
     ai.tower_loop()
-    --movement.setup_key_hook()
+    --core.log('Tower loop started')
+    --movement.setup_key_hook() --// empty function (moved to DOTG1.lua -> addEventHandler -> onWindowMessage)
     while true do
         wait(0)
         if local_player.PLAYER.STATE == GAME_STATE.IN_GAME then
@@ -263,7 +280,7 @@ function main()
             showCursor(not isKeyDown(VK_MBUTTON))
             local_player.loop()
             if local_player.PLAYER.camera_mode == 0 then camera.update_camera() end
-            
+            print(type(Vector3D(0, 0, 0)))
             if isKeyDown(VK_LMENU) then map.draw_building_circles() end
             map.set_hp(PLAYER_PED, local_player.health)
             map.draw_circle_on_target()
@@ -294,7 +311,7 @@ function main()
 end
 
 
-
+-- wtf? todo: move this shit to lib\DOTG1\ui.lua
 function join_argb(a, r, g, b)
     local argb = b  -- b
     argb = bit.bor(argb, bit.lshift(g, 8))  -- g
