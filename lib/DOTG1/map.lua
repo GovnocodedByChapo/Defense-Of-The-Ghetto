@@ -1,11 +1,18 @@
+--[[pointer
+    map.lua:
+        This file is a part of the DOTG1 mini-game.
+        Author: chapo
+        Last update: N/A
+]] 
+
 local Vector3D = require('vector3d')
 local memory = require('memory')
-
+local local_player = require('DOTG1.local_player')
 --local core = require('DOTG1.core')
 MODULE_MAP = {
     CURSOR_POINTER = nil,
     required_models = {
-        103, 105, 107, 149, 269, 336, 339, 359
+        4, 103, 105, 107, 149, 269, 336, 339, 359
     },
     tower_model = 3286, 
     pos = Vector3D(0, 0, 600),
@@ -211,6 +218,23 @@ local CREEP_SPAWNPOINT = {
     }
 }
 
+MODULE_MAP.deal_damage_to_point = function(point, radius, damage, team_damage)
+    for ped, tag in pairs(MODULE_MAP.pool.bots) do
+        if doesCharExist(ped) then
+            local ped_pos = Vector3D(getCharCoordinates(ped))
+            if getDistanceBetweenCoords3d(point.x, point.y, point.z, ped_pos.x, ped_pos.y, ped_pos.z) <= radius then
+                local start_hp = getCharHealth(ped)
+                if start_hp - damage <= 0 then
+                    MODULE_MAP.pool.bots[ped] = nil
+                    deleteChar(ped)
+                else
+                    MODULE_MAP.set_hp(ped, start_hp - damage)
+                end
+            end
+        end
+    end
+end
+
 MODULE_MAP.apply_hero_to_player = function()
 
 end
@@ -318,10 +342,9 @@ MODULE_MAP.teleport_player_to_map = function()
     setCharCoordinates(PLAYER_PED, MODULE_MAP.pos.x, MODULE_MAP.pos.y, MODULE_MAP.pos.z)
 end
 
-local TEST_TOWER_BALLS = nil
-
 MODULE_MAP.create_map = function()
     MODULE_MAP.CURSOR_POINTER = createObject(19605, MODULE_MAP.pos.x, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 10) 
+    setObjectScale(MODULE_MAP.CURSOR_POINTER, 0)
     --setObjectCollision(MODULE_MAP.CURSOR_POINTER, false)
     MODULE_MAP.spawn_tower(Vector3D(MODULE_MAP.pos.x + 125 + 27, MODULE_MAP.pos.y + 0, MODULE_MAP.pos.z), SIDE_GROOVE) -- groove down 1
     MODULE_MAP.spawn_tower(Vector3D(MODULE_MAP.pos.x + 125 + 27, MODULE_MAP.pos.y - 80, MODULE_MAP.pos.z), SIDE_GROOVE) -- groove down 2
@@ -369,9 +392,6 @@ MODULE_MAP.spawn_bot = function(side)
 end
 ]]
 
-MODULE_MAP.process_bot_behavior = function()
-
-end
 
 
 MODULE_MAP.draw_building_circles = function()
@@ -448,6 +468,7 @@ MODULE_MAP.drawCircleIn3d = function(x, y, z, radius, color, width, polygons)
 end
 
 MODULE_MAP.init = function()
+    local_player.PLAYER.selected_map = MODULE_MAP.get_maps_list()[1]
     for k, v in ipairs(MODULE_MAP.required_models) do--MODULE_MAP.required_models) do
         if not hasModelLoaded(v) then
             requestModel(v)
@@ -466,48 +487,68 @@ MODULE_MAP.get_distance_from_pointer = function(x, y, z)
     return -1
 end
 
-MODULE_MAP.environment = [[]]
-
-MODULE_MAP.create_environment = function()
-    local items = MODULE_MAP.load_mta_map(MODULE_MAP.environment)
-    for index, data in ipairs(items) do
-        local opos = data.dont_use_offset == nil and Vector3D(MODULE_MAP.pos.x + data.pos.x, MODULE_MAP.pos.y + data.pos.y, MODULE_MAP.pos.z + data.pos.z) or Vector3D(data.pos.x, data.pos.y, data.pos.z) 
-        local new_object = createObject(data.model, opos.x, opos.y, opos.z)
-        setObjectRotation(new_object, data.rotation.x, data.rotation.y, data.rotation.z)
-        setObjectScale(new_object, data.collision)
-        setObjectScale(new_object, data.scale)
-
-        table.insert(MODULE_MAP.pool.objects, new_object)
-        --core.log('[MAP] create_map -> object'..(data.comment ~= nil and ' "'..data.comment..'"' or '')..' created. Model: '..data.model..', offsets: '..data.pos.x..';'..data.pos.y..';'..data.pos.z)
-    end
+local getFilesInPath = function(path, ftype)
+    local Files, SearchHandle, File = {}, findFirstFile(path.."\\"..ftype)
+    table.insert(Files, File)
+    while File do File = findNextFile(SearchHandle) table.insert(Files, File) end
+    return Files
 end
 
-MODULE_MAP.load_mta_map = function(code)
-    local objects_list = {}
+MODULE_MAP.get_maps_list = function()
+    assert(doesDirectoryExist(getWorkingDirectory()..'\\lib\\DOTG1\\maps'), 'maps path not found!')
+    return getFilesInPath(getWorkingDirectory()..'\\lib\\DOTG1\\maps', '*.json')
+end
 
-    for line in code:gmatch('[^\n]+') do
-        if line:find('<object.+</object>') then
-            local id = line:match('id="(.+)"%s')
-            local model = line:match('model="(.+)"%s')
-            local posX = line:match('posX="(.+)"%s')
-            local posY = line:match('posY="(.+)"%s')
-            local posZ = line:match('posZ="(.+)"%s')
-            local rotX = line:match('rotX="(.+)"%s')
-            local rotY = line:match('rotY="(.+)"%s')
-            local rotZ = line:match('rotZ="(.+)"')
-            table.insert(objects_list, {
-                comment = id,
-                model = tonumber(model),
-                pos = Vector3D(tonumber(posX), tonumber(posY), tonumber(posZ)),
-                rotation = Vector3D(tonumber(rotX), tonumber(rotY), tonumber(rotZ)),
-                collision = true,
-                scale = 1,
-                dont_use_offset = true
-            })
+MODULE_MAP.load_map = function(file, team, teleport_on_spawn)
+    assert(doesFileExist(getWorkingDirectory()..'\\lib\\DOTG1\\maps\\'..file), 'map "'..file..'" not found!')
+    local F = io.open(getWorkingDirectory()..'\\lib\\DOTG1\\maps\\'..file, 'r')
+    local JSON = F:read('*all')
+    F:close()
+    assert(#JSON > 0, 'JSON (map data) is empty!')
+    local data = decodeJson(JSON)
+    local team = team or 0
+    -->> spawn objects
+    for index, data in ipairs(data.objects) do
+        local opos = Vector3D(MODULE_MAP.pos.x + data.pos[1], MODULE_MAP.pos.y + data.pos[2], MODULE_MAP.pos.z + data.pos[3])
+        local new_object = createObject(data.model, opos.x, opos.y, opos.z)
+        setObjectRotation(new_object, data.rotation[1], data.rotation[2], data.rotation[3])
+        setObjectScale(new_object, data.collision or true)
+        setObjectScale(new_object, data.scale or 1)
+        table.insert(MODULE_MAP.pool.objects, new_object)
+    end
+
+    -->> spawn towers
+    for team, items in pairs(data.towers) do
+        for index, pos_table in pairs(items) do
+            MODULE_MAP.spawn_tower(Vector3D(table.unpack(pos_table)), team - 1)
+            print('TOWER_SPAWNED:', team + 1, index, table.unpack(pos_table))
         end
     end
 
-    return objects_list
+    -->> teleport
+    setCharCoordinates(PLAYER_PED, table.unpack(data.spawn_point[team + 1]))
 end
 
+--[[
+    custom map struct:
+{
+    spawn_point = {
+        [0] = {0, 0, 0}, -- GROOVE
+        [1] = {10, 10, 0} -- BALLAS
+    },
+    towers = { -- GROOVE TOWERS
+        [0] = {
+            {0, 0, 0},
+            {1, 1, 1}
+        }, 
+        [1] = { -- BALLAS TOWERS
+            {5, 5, 5},
+            {6, 6, 6}
+        } 
+    },
+    objects = {
+
+    }
+}
+]]
 return MODULE_MAP

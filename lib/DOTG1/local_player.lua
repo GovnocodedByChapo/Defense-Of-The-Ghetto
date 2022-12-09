@@ -1,9 +1,16 @@
-
+--[[
+    local_player.lua:
+        This file is a part of the DOTG1 mini-game.
+        Author: chapo
+        Last update: N/A
+]] 
 GAME_STATE = { NONE = 0, MAIN_MENU = 1, HERO_SELECT = 2, IN_GAME = 3 }
 LOCAL_PLAYER = {
     PLAYER = {
-        STATE = GAME_STATE.NONE,
+        STATE = GAME_STATE.HERO_SELECT,
+        selected_map = 'none',
         hero = 1,
+        team = 0,
         camera_mode = 0,
         debuff = {}
     },
@@ -19,7 +26,8 @@ LOCAL_PLAYER = {
     regen_last = 0,
     cooldown = {
         [1] = 0,
-        [2] = 0
+        [2] = 0,
+        [3] = 0
     },
     money = 600,
     items = {}

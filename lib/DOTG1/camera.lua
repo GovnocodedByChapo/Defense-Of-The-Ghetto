@@ -3,15 +3,16 @@ local map = require('DOTG1.map')
 
 MODULE_CAMERA = {
     set_pos = function(vec3)
+        --setFixedCameraPosition(vec3.x, vec3.y, vec3.z, 0, 0, 0)
         local bs = raknetNewBitStream()
         raknetBitStreamWriteFloat(bs, vec3.x)
         raknetBitStreamWriteFloat(bs, vec3.y)
         raknetBitStreamWriteFloat(bs, vec3.z)
         raknetEmulRpcReceiveBitStream(157, bs)
         raknetDeleteBitStream(bs)
-        
     end,
     look_at = function(vec3, cutType)
+        --pointCameraAtPoint(vec3.x, vec3.y, vec3.z, cutType)
         local bs = raknetNewBitStream()
         raknetBitStreamWriteFloat(bs, vec3.x)
         raknetBitStreamWriteFloat(bs, vec3.y)

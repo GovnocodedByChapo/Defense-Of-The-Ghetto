@@ -1,3 +1,9 @@
+--[[
+    movement.lua:
+        This file is a part of the DOTG1 mini-game.
+        Author: chapo
+        Last update: N/A
+]] 
 require('lib.moonloader')
 local Vector3D = require('vector3d')
 local map = require('DOTG1.map')
@@ -107,13 +113,13 @@ MOVEMENT.fight_loop = function()
         if doesCharExist(MOVEMENT.target_handle) then
             local target = Vector3D(getCharCoordinates(MOVEMENT.target_handle))
             local player = Vector3D(getCharCoordinates(PLAYER_PED))
-            if getDistanceBetweenCoords3d(target.x, target.y, target.z, player.x, player.y, player.z) <= PLAYER.hero.hit_distance then
+            if getDistanceBetweenCoords3d(target.x, target.y, target.z, player.x, player.y, player.z) <= local_player.PLAYER.hero.hit_distance then
                 local fire_rate = 1
-                if MOVEMENT.last_hit + PLAYER.hero.hit_speed - os.clock() <= 0 then
+                if MOVEMENT.last_hit + local_player.PLAYER.hero.hit_speed - os.clock() <= 0 then
                     MOVEMENT.last_hit = os.clock()
                     clearCharTasksImmediately(PLAYER_PED)
-                    taskPlayAnim(PLAYER_PED, PLAYER.hero.hit_animation.name, PLAYER.hero.hit_animation.file, 1000, false, false, false, false, -1)
-                    map.set_hp(MOVEMENT.target_handle, getCharHealth(MOVEMENT.target_handle) - PLAYER.hero.damage) -- 20 - damage
+                    taskPlayAnim(PLAYER_PED, local_player.PLAYER.hero.hit_animation.name, local_player.PLAYER.hero.hit_animation.file, 1000, false, false, false, false, -1)
+                    map.set_hp(MOVEMENT.target_handle, getCharHealth(MOVEMENT.target_handle) - local_player.PLAYER.hero.damage) -- 20 - damage
                     if getCharHealth(MOVEMENT.target_handle) <= 0 then
                         map.pool.bots[MOVEMENT.target_handle] = nil
                         deleteChar(MOVEMENT.target_handle)

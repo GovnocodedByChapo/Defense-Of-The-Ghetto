@@ -1,7 +1,8 @@
 --[[
-    This file is a part of the DOTG1 mini-game.
-    Author: chapo
-    Last update: none
+    ui.lua:
+        This file is a part of the DOTG1 mini-game.
+        Author: chapo
+        Last update: da idi ti nahui
 ]] 
 GAME_STATE = { NONE = 0, MAIN_MENU = 1, HERO_SELECT = 2, IN_GAME = 3 }
 local Vector3D = require('vector3d')
@@ -15,11 +16,18 @@ local items = require('DOTG1.items')
 local encoding = require('encoding')
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
+
 MODULE_UI = { 
     font = {},
     image = {
         hero = {}
     } 
+}
+
+local index_names = {
+    [1] = 'Q',
+    [2] = 'W',
+    [3] = 'E'
 }
 
 function imgui.CenterText(text)
@@ -42,18 +50,37 @@ MODULE_UI.draw_main_menu = function(hero_select_callback)
         imgui.CenterText('by chapo')
 
         if local_player.PLAYER.STATE == GAME_STATE.MAIN_MENU then
+            imgui.SetCursorPosY(size.y / 5 + 50)
+            imgui.PushFont(MODULE_UI.font[30])
+            imgui.CenterText('CHOOSE MAP')
+            imgui.PopFont()
+
+            -->> play button
             local PLAY_BUTTON_SIZE = imgui.ImVec2(size.x / 8, size.y / 13)
             imgui.SetCursorPos(imgui.ImVec2(size.x - PLAY_BUTTON_SIZE.x - 25, size.y - PLAY_BUTTON_SIZE.y - 25))
-
             imgui.PushFont(MODULE_UI.font[20])
             if imgui.Button('PLAY', PLAY_BUTTON_SIZE) then
                 local_player.PLAYER.STATE = GAME_STATE.HERO_SELECT
+            end
+            
+            -->> map selector
+            imgui.SetCursorPos(imgui.ImVec2(size.x / 3, size.y / 3))
+            if imgui.BeginChild('maps_list', imgui.ImVec2(size.x / 3, size.x / 3), true) then
+                for index, name in ipairs(map.get_maps_list()) do
+                    imgui.SetCursorPosX(10)
+                    imgui.PushStyleColor(imgui.Col.Button, local_player.PLAYER.selected_map == name and imgui.ImVec4(1, 1, 1, 0.3) or  imgui.GetStyle().Colors[imgui.Col.Button])
+                    if imgui.Button(select(1, name:gsub('%.json', '')), imgui.ImVec2(size.x / 3 - 20, 40)) then
+                        local_player.PLAYER.selected_map = name
+                    end
+                    imgui.PopStyleColor()
+                end
+                imgui.EndChild()
             end
             imgui.PopFont()
         else
             --imgui.Separator()
             imgui.SetCursorPosY(size.y / 5 + 50)
-            imgui.PushFont(MODULE_UI.font[40])
+            imgui.PushFont(MODULE_UI.font[30])
             imgui.CenterText('CHOOSE YOUR HERO')
             imgui.PopFont()
 
@@ -63,23 +90,24 @@ MODULE_UI.draw_main_menu = function(hero_select_callback)
                 if imgui.BeginChild('hero_select_'.._hero.name, imgui.ImVec2(size.x / 8, size.y / 3), true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse) then
                     local image_size = imgui.ImVec2(size.x / 8 - 10, size.y / 3 - 10)
                     
-                    imgui.SetCursorPos(imgui.ImVec2(5, 5))
-                    imgui.InvisibleButton('hero_select_'.._hero.name..'_HOVER_ZONE', imgui.ImVec2(size.x / 8 - 10, size.y / 3 - 10))
-                    if imgui.IsItemHovered() then
-                        image_size = imgui.ImVec2(size.x / 8, size.y / 3)
+                   
+                    imgui.SetCursorPos(imgui.ImVec2(0, 0))
+                    local p = imgui.GetCursorScreenPos()
+                    if imgui.ImageButton(MODULE_UI.image.hero[index].icon, image_size) then
+                        hero_select_callback(index)
                     end
-                    imgui.SetCursorPos(imgui.IsItemHovered() and imgui.ImVec2(0, 0) or imgui.ImVec2(5, 5))
-                    imgui.Image(MODULE_UI.image.hero[1].icon, image_size)
                     if imgui.IsItemHovered() then
                         imgui.BeginTooltip()
                         imgui.Text(_hero.name)
                         imgui.EndTooltip()
-                        
+                        local cdl = imgui.GetWindowDrawList()
+                        cdl:AddRectFilled(imgui.ImVec2(p.x, p.y + image_size.y / 1.1), imgui.ImVec2(p.x + image_size.x + 20, p.y + image_size.y + 10), 0xCC000000)--, float rounding = 0.0f, int rounding_corners_flags = ~0)
+                        imgui.PushFont(MODULE_UI.font[25])
+                        imgui.SetCursorPosY(image_size.y - 25)
+                        imgui.CenterText(_hero.name)
+                        imgui.PopFont()
                     end
-                    if imgui.IsMouseClicked(0) then
-                        hero_select_callback(index)
-                        
-                    end
+                    
                     imgui.EndChild()
                 end  
                 if index < #hero.list then
@@ -102,29 +130,45 @@ MODULE_UI.draw_game_hud = function()
         imgui.SetCursorPos(imgui.ImVec2(10, 10))
         if imgui.BeginChild('player_image', imgui.ImVec2(size.y - 20, size.y - 20), true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse) then
             imgui.SetCursorPos(imgui.ImVec2(0, 0))
-            imgui.Image(MODULE_UI.image.hero[1].icon, imgui.ImVec2(size.y - 20, size.y - 20))
+            imgui.Image(MODULE_UI.image.hero[local_player.PLAYER.hero_index].icon, imgui.ImVec2(size.y - 20, size.y - 20))
             imgui.EndChild()
         end
         if imgui.IsItemClicked() then
             camera.point_camera_to_player()
         end
         imgui.SameLine()
-        for index, ability in ipairs(PLAYER.hero.abilities) do
-            if imgui.BeginChild('ability_'..tostring(index), imgui.ImVec2(size.y / 2, size.y / 2), true) then
-                imgui.TextWrapped(tostring(ability.name))
-
+        for index, ability in ipairs(local_player.PLAYER.hero.abilities) do
+            imgui.PushStyleVarVec2(imgui.StyleVar.WindowPadding, imgui.ImVec2(0, 0))
+            local aSize = imgui.ImVec2(size.y / 2, size.y / 2)
+            if imgui.BeginChild('ability_'..tostring(index), aSize, true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse) then
+                imgui.SetCursorPos(imgui.ImVec2(0, 0))
+                local _dl, _start = imgui.GetWindowDrawList(), imgui.GetCursorScreenPos()
+                imgui.Image(MODULE_UI.image.hero[local_player.PLAYER.hero_index].ability[index], aSize)
+                
+                imgui.SetCursorPos(imgui.ImVec2(5, 5))
+                imgui.TextWrapped(tostring(index_names[index]))
+               
                 local cd = local_player.cooldown[index] + ability.cooldown - os.clock()
-                if cd >= 0 then
-                    imgui.Text('CD: '..tostring(local_player.cooldown[index] + ability.cooldown - os.clock()))
+                if cd >= 0 then 
+                    local cd_proc = aSize.x / 100 * math.floor(cd * 100 / ability.cooldown)
+                    _dl:AddRectFilled(_start, imgui.ImVec2(_start.x + cd_proc, _start.y + aSize.y), 0xCC000000)
+
+                    imgui.PushFont(MODULE_UI.font[20])
+                    imgui.CenterText(tostring(math.ceil(cd))) 
+                    imgui.PopFont()
                 end
+
+                -->> key tooltip
+                
                 imgui.EndChild()
             end
+            imgui.PopStyleVar()
             if imgui.IsItemHovered() then
                 imgui.BeginTooltip()
                 imgui.Text(ability.name..'\n\n'..u8(ability.tooltip))
                 imgui.EndTooltip()
             end
-            if index < #PLAYER.hero.abilities then
+            if index < #local_player.PLAYER.hero.abilities then
                 imgui.SameLine()
             end
         end
@@ -157,10 +201,10 @@ MODULE_UI.draw_game_hud = function()
 
         imgui.SetCursorPos(imgui.ImVec2(size.x - 10 - 40, 10))
         if imgui.Button('CAM', imgui.ImVec2(40, 20)) then
-            PLAYER.camera_mode = PLAYER.camera_mode == 0 and 1 or 0
-            if PLAYER.camera_mode == 0 then
+            local_player.PLAYER.camera_mode = local_player.PLAYER.camera_mode == 0 and 1 or 0
+            if local_player.PLAYER.camera_mode == 0 then
                 camera.point_camera_to_player()
-            elseif PLAYER.camera_mode == 1 then
+            elseif local_player.PLAYER.camera_mode == 1 then
                 restoreCameraJumpcut()
             end
         end
@@ -175,7 +219,7 @@ MODULE_UI.init = function()
     local font_config = imgui.ImFontConfig()
     font_config.SizePixels = 14.0
     font_config.GlyphExtraSpacing.x = 0.1
-    for _, size in ipairs({14, 20, 25, 40}) do
+    for _, size in ipairs({14, 20, 25, 30, 40}) do
         MODULE_UI.font[size] = imgui.GetIO().Fonts:AddFontFromFileTTF(getFolderPath(0x14)..'\\trebucbd.ttf', size, font_config, defGlyph)
     end
 
@@ -187,15 +231,23 @@ MODULE_UI.init = function()
                 MODULE_UI.image.hero[index] = {}
             end
             MODULE_UI.image.hero[index].icon = imgui.CreateTextureFromFileInMemory(imgui.new('const char*', player_image_base85), #player_image_base85)
+            -->> abilities
+            if MODULE_UI.image.hero[index].ability == nil then
+                MODULE_UI.image.hero[index].ability = {}
+            end
+            for ab_index, ab_data in ipairs(resource.hero_icon[index].ability) do
+                MODULE_UI.image.hero[index].ability[ab_index] = imgui.CreateTextureFromFileInMemory(imgui.new('const char*', ab_data), #ab_data)
+            end
         end
     end
+
+
 
     -->> items icons 
     for k, v in pairs(items.list) do
         if resource.item_icon[k] then
             local base85 = resource.item_icon[k]
             items.list[k].icon = imgui.CreateTextureFromFileInMemory(imgui.new('const char*', base85), #base85)
-            sampAddChatMessage('loaded image '..k, -1)
         end
     end
 end

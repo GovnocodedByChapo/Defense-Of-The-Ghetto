@@ -1,3 +1,9 @@
+--[[
+    ai.lua:
+        This file is a part of the DOTG1 mini-game.
+        Author: chapo
+        Last update: N/A
+]] 
 local map = require('DOTG1.map')
 local local_player = require('DOTG1.local_player')
 SIDE_GROOVE, SIDE_BALLAS = 0, 1
@@ -66,3 +72,4 @@ AI.creep_loop = function(creep_handle, creep_side, creep_route_index)
 end
 
 return AI
+
