@@ -125,14 +125,27 @@ imgui.OnInitialize(function()
     ui.init()
 end)
 
+local selection_pos = imgui.ImVec2(0, 0)
+pedGoTo = taskCharSlideToCoord
+taskCharSlideToCoord = function(...)
+    local status, result = pcall(pedGoTo, ...)
+    if status then
+        print('[PEDGOTO] ALLOK: '..table.concat({...}, ', '))
+    else
+        print('[PEDGOTO] FATAL: '..table.concat({...}, ', '), result)
+    end
+end
 local ui_frame = imgui.OnFrame(
     function() 
         return local_player.PLAYER.STATE ~= GAME_STATE.NONE
     end,
     function(self)
         self.HideCursor = local_player.PLAYER.STATE ~= GAME_STATE.MAIN_MENU and local_player.PLAYER.STATE ~= GAME_STATE.HERO_SELECT
-        
-        
+        local BGDL = imgui.GetBackgroundDrawList()
+        if isKeyDown(VK_LBUTTON) then
+            BGDL:AddRectFilled(selection_pos, imgui.ImVec2(getCursorPos()), imgui.GetColorU32Vec4(imgui.ImVec4(0, 0.84, 0.18, 0.4)))
+            BGDL:AddRect(selection_pos, imgui.ImVec2(getCursorPos()), imgui.GetColorU32Vec4(imgui.ImVec4(0, 0.84, 0.18, 0.4)), 0, 0, 3)
+        end
 
         -->> Main menu
         if local_player.PLAYER.STATE == GAME_STATE.MAIN_MENU or local_player.PLAYER.STATE == GAME_STATE.HERO_SELECT then
@@ -158,39 +171,12 @@ local ui_frame = imgui.OnFrame(
         -->> HUD
         if local_player.PLAYER.STATE == GAME_STATE.IN_GAME then
             ui.draw_game_hud()
-            --ui.draw_inventory()
-            local resX, resY = getScreenResolution()
-            imgui.SetNextWindowPos(imgui.ImVec2(resX / 1.5, resY - resY / 7), imgui.Cond.Always, imgui.ImVec2(0, 0))
-            if imgui.Begin('DOTG1_inventory', nil, imgui.WindowFlags.NoResize + imgui.WindowFlags.NoMove + imgui.WindowFlags.NoTitleBar) then
-                imgui.PushStyleVarVec2(imgui.StyleVar.WindowPadding, imgui.ImVec2(0, 0))
-                local slot_size = imgui.ImVec2(50, 30)
-                for slot = 1, 6 do
-                    if imgui.BeginChild('inventory_slot_'..tostring(slot), slot_size, true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse) then
-                        if local_player.items[slot] then
-                            if items.list[local_player.items[slot]] then
-                                imgui.Image(items.list[local_player.items[slot]].icon, slot_size)
-                            end
-                        end
-                        imgui.EndChild() 
-                    end
-                    if slot ~= 3 then
-                        imgui.SameLine()
-                    end
-                end
-                imgui.PopStyleVar()
-                imgui.End()
-            end
-            
             ui.draw_health_bars(imgui.GetBackgroundDrawList())
-
-            -- draw shop
             ui.draw_shop_button()
-            if items.shop_menu then
-                ui.draw_shop_menu()
-            end
+            if items.shop_menu then ui.draw_shop_menu() end
         end
 
-         -->> Pause menu
+        -->> Pause menu
         if local_player.PLAYER.STATE == GAME_STATE.IN_GAME_PAUSED then
             ui.draw_pause()
         end
@@ -216,7 +202,8 @@ addEventHandler('onWindowMessage', function(msg, key)
             [VK_Q] = function() local_player.use_ability(local_player.PLAYER.hero.abilities[1], 1) end,
             [VK_W] = function() local_player.use_ability(local_player.PLAYER.hero.abilities[2], 2) end,
             [VK_E] = function() local_player.use_ability(local_player.PLAYER.hero.abilities[3], 3) end,
-
+            [VK_R] = function() local_player.use_ability(local_player.PLAYER.hero.abilities[4], 4) end,
+            
             [VK_Z] = function() items.use_item(local_player.items[1], 1, false) end,
             [VK_X] = function() items.use_item(local_player.items[2], 2, false) end,
             [VK_C] = function() items.use_item(local_player.items[3], 3, false) end,
@@ -275,12 +262,14 @@ function main()
     while true do
         wait(0)
         if local_player.PLAYER.STATE == GAME_STATE.IN_GAME then
+            if wasKeyPressed(VK_LBUTTON) then
+                selection_pos = imgui.ImVec2(getCursorPos())
+            end
             local curX, curY = getCursorPos()
             local resX, resY = getScreenResolution()
             showCursor(not isKeyDown(VK_MBUTTON))
             local_player.loop()
             if local_player.PLAYER.camera_mode == 0 then camera.update_camera() end
-            print(type(Vector3D(0, 0, 0)))
             if isKeyDown(VK_LMENU) then map.draw_building_circles() end
             map.set_hp(PLAYER_PED, local_player.health)
             map.draw_circle_on_target()
@@ -289,6 +278,8 @@ function main()
             movement.fight_loop()
             movement.disable_game_keys() 
             movement.draw_circles()
+
+
 
             -->> DEBUG
             if doesObjectExist(map.CURSOR_POINTER) then
