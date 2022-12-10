@@ -1,163 +1,132 @@
 {
+    "spawn_rock_background": true,
     "spawn_point": [
         [152, -152, 600],
         [-152, 152, 600]
     ],
+    "creeps_routes": [
+        {
+            "creeps_count": 5,
+            "spawn":[125, -125, 601],
+            "stop":[-125, 125, 601]
+        },
+        {
+            "creeps_count": 5,
+            "spawn":[-125, 125, 601],
+            "stop":[125, -125, 601]
+        }
+    ],
+    "fountains": [
+        [150, -150, 600],
+        [-150, 150, 600]
+    ],
     "towers": [
         [
-            [152, 80, 600],
-            [152, -25, 600]
+            [20, -20, 600],
+            [50, -50, 600],
+            [125, 80, 600],
+            [125, -25, 600],
+            [30, -125, 600],
+            [-41, -125, 600]
         ],
         [
-            [5, 152, 600],
-            [-90, 152, 600]
+            [-20, 20, 600],
+            [-50, 50, 600],
+            [-125, -80, 600],
+            [-125, 25, 600],
+            [-30, 125, 600],
+            [41, 125, 600]
         ]
     ],
     "objects":[
-        {
-            "pos":[
-                -125,
-                0,
-                0
-            ],
-            "scale":1,
-            "model":19551,
-            "comment":"floor_1",
-            "rotation":[
-                0,
-                0,
-                0
-            ],
-            "collision":true
-        },
-        {
-            "pos":[
-                0,
-                0,
-                0
-            ],
-            "scale":1,
-            "model":19550,
-            "comment":"floor_2_center",
-            "rotation":[
-                0,
-                0,
-                0
-            ],
-            "collision":true
-        },
-        {
-            "pos":[
-                125,
-                0,
-                0
-            ],
-            "scale":1,
-            "model":19550,
-            "comment":"floor_3",
-            "rotation":[
-                0,
-                0,
-                0
-            ],
-            "collision":true
-        },
-        {
-            "pos":[
-                -125,
-                125,
-                0
-            ],
-            "scale":1,
-            "model":19551,
-            "comment":"floor_4",
-            "rotation":[
-                0,
-                0,
-                0
-            ],
-            "collision":true
-        },
-        {
-            "pos":[
-                0,
-                125,
-                0
-            ],
-            "scale":1,
-            "model":19551,
-            "comment":"floor_5",
-            "rotation":[
-                0,
-                0,
-                0
-            ],
-            "collision":true
-        },
-        {
-            "pos":[
-                125,
-                125,
-                0
-            ],
-            "scale":1,
-            "model":19550,
-            "comment":"floor_6",
-            "rotation":[
-                0,
-                0,
-                0
-            ],
-            "collision":true
-        },
-        {
-            "pos":[
-                -125,
-                -125,
-                0
-            ],
-            "scale":1,
-            "model":19550,
-            "comment":"floor_4",
-            "rotation":[
-                0,
-                0,
-                0
-            ],
-            "collision":true
-        },
-        {
-            "pos":[
-                0,
-                -125,
-                0
-            ],
-            "scale":1,
-            "model":19550,
-            "comment":"floor_5",
-            "rotation":[
-                0,
-                0,
-                0
-            ],
-            "collision":true
-        },
-        {
-            "pos":[
-                125,
-                -125,
-                0
-            ],
-            "scale":1,
-            "model":19550,
-            "comment":"floor_6",
-            "rotation":[
-                0,
-                0,
-                0
-            ],
-            "collision":true
-        }
+        {"comment":"floor_1", "pos":[-125,0,600],"scale":1,"model":19550,"rotation":[0,0,0],"collision":true},
+        {"comment":"floor_2_center", "pos":[0,0,600],"scale":1,"model":19550,"rotation":[0,0,0],"collision":true},
+        {"comment":"floor_3", "pos":[125,0,600],"scale":1,"model":19550,"rotation":[0,0,0],"collision":true},
+        {"comment":"floor_4", "pos":[-125,125,600],"scale":1,"model":19550,"rotation":[0,0,0],"collision":true},
+        {"comment":"floor_5", "pos":[0,125,600],"scale":1,"model":19550,"rotation":[0,0,0],"collision":true},
+        {"comment":"floor_6", "pos":[125,125,600],"scale":1,"model":19550,"rotation":[0,0,0],"collision":true},
+        {"comment":"floor_4", "pos":[-125,-125,600],"scale":1,"model":19550,"rotation":[0,0,0],"collision":true},
+        {"comment":"floor_5", "pos":[0,-125,600],"scale":1,"model":19550,"rotation":[0,0,0],"collision":true},
+        {"comment":"floor_6", "pos":[125,-125,600],"scale":1,"model":19550,"rotation":[0,0,0],"collision":true},
+        
+        {"model":4152,"collision":true,"pos":[0,0,600],"scale":1,"rotation":[0,0,45],"comment":"Object #8"},
+        {"model":4152,"collision":true,"pos":[-125,125,600],"scale":1,"rotation":[0,0,45],"comment":"Object #8_COPY"},
+        {"model":4152,"collision":true,"pos":[125,-125,600],"scale":1,"rotation":[0,0,45],"comment":"Object #8_COPY_COPY"},
+        {"model":4152,"collision":true,"pos":[75,-75,600],"scale":1,"rotation":[0,0,45],"comment":"Object #8_COPY_COPY_COPY"},
+        {"model":4152,"collision":true,"pos":[-75,75,600],"scale":1,"rotation":[0,0,45],"comment":"Object #8_COPY_COPY"},
+
+        {"pos":[125,-55,600],"scale":1,"collision":false,"comment":"DOWNLINE #2","model":4152,"rotation":[0,0,0]},
+        {"pos":[125,70,600],"scale":1,"collision":false,"comment":"DOWNLINE #2_COPY","model":4152,"rotation":[0,0,0]},
+        {"pos":[-55,125,600],"scale":1,"collision":false,"comment":"DOWNLINE #2_COPY_COPY","model":4152,"rotation":[0,0,90]},
+        {"pos":[70,125,600],"scale":1,"collision":false,"comment":"DOWNLINE #2_COPY_COPY_COPY","model":4152,"rotation":[0,0,90]},
+
+        {"pos":[-125,55,600],"scale":1,"collision":false,"comment":"TOPLINE #2","model":4152,"rotation":[0,0,0]},
+        {"pos":[-125,-70,600],"scale":1,"collision":false,"comment":"TOPLINE #2_COPY","model":4152,"rotation":[0,0,0]},
+        {"pos":[55,-125,600],"scale":1,"collision":false,"comment":"TOPLINE #2_COPY_COPY","model":4152,"rotation":[0,0,270]},
+        {"pos":[-70,-125,600],"scale":1,"collision":false,"comment":"TOPLINE #2_COPY_COPY_COPY","model":4152,"rotation":[0,0,270]},
+
+
+
+
+
+        {"scale":1,"model":3640,"comment":"Line_Bottom_Top","pos":[107.85287475586,-78.274017333984,600],"collision":false,"rotation":[0,0,90]},
+        {"scale":1,"model":9326,"comment":"Line_Bottom_Top","pos":[105.28001403809,-61.934051513672,600],"collision":false,"rotation":[0,0,180]},
+        {"scale":1,"model":3843,"comment":"Line_Bottom_Top","pos":[106.91502380371,-47.144996643066,600],"collision":false,"rotation":[0,0,180]},
+        {"scale":1,"model":3823,"comment":"Line_Bottom_Top","pos":[105.62985992432,-32.426391601563,600],"collision":false,"rotation":[0,0,0]},
+        {"scale":1,"model":9275,"comment":"Line_Bottom_Top","pos":[106.41770935059,-15.420436859131,600],"collision":false,"rotation":[0,0,0]},
+        {"scale":1,"model":5520,"comment":"Line_Bottom_Top","pos":[101.08378601074,8.4388046264648,600],"collision":false,"rotation":[0,0,90]},
+        {"scale":1,"model":9320,"comment":"Line_Bottom_Top","pos":[96.189224243164,41.706481933594,600],"collision":false,"rotation":[0,0,180]},
+        {"scale":1,"model":9322,"comment":"Line_Bottom_Top","pos":[104.88433837891,67.820083618164,600],"collision":false,"rotation":[0,0,90]},
+        {"scale":1,"model":3316,"comment":"Line_Bottom_Top","pos":[153.59991455078,-89.228706359863,600],"collision":false,"rotation":[0,0,270]},
+        {"scale":1,"model":3314,"comment":"Line_Bottom_Bottom","pos":[153.59991455078,-7.1000008583069,600],"collision":false,"rotation":[0,0,270]},
+        {"scale":1,"model":3351,"comment":"Line_Bottom_Bottom","pos":[153.59991455078,35.699989318848,600],"collision":false,"rotation":[0,0,270]},
+        {"scale":1,"model":3353,"comment":"Line_Bottom_Bottom","pos":[153.59991455078,92.399963378906,600],"collision":false,"rotation":[0,0,270]},
+        {"scale":1,"model":6257,"comment":"Line_Bottom_Bottom","pos":[153.46401977539,-49.524425506592,600],"collision":false,"rotation":[0,0,270]},
+
+
+
+
+        {"scale":1,"model":3640,"comment":"Line_Top_Top","pos":[-107.85287475586,-78.274017333984,600],"collision":false,"rotation":[0,0,270]},
+        {"scale":1,"model":9326,"comment":"Line_Top_Top","pos":[-105.28001403809,-61.934051513672,600],"collision":false,"rotation":[0,0,0]},
+        {"scale":1,"model":3843,"comment":"Line_Top_Top","pos":[-106.91502380371,-47.144996643066,600],"collision":false,"rotation":[0,0,0]},
+        {"scale":1,"model":3823,"comment":"Line_Top_Top","pos":[-105.62985992432,-32.426391601563,600],"collision":false,"rotation":[0,0,180]},
+        {"scale":1,"model":9275,"comment":"Line_Top_Top","pos":[-106.41770935059,-15.420436859131,600],"collision":false,"rotation":[0,0,180]},
+        {"scale":1,"model":5520,"comment":"Line_Top_Top","pos":[-101.08378601074,8.4388046264648,600],"collision":false,"rotation":[0,0,270]},
+        {"scale":1,"model":9320,"comment":"Line_Top_Top","pos":[-96.189224243164,41.706481933594,600],"collision":false,"rotation":[0,0,0]},
+        {"scale":1,"model":9322,"comment":"Line_Top_Top","pos":[-104.88433837891,67.820083618164,600],"collision":false,"rotation":[0,0,450]},
+        {"scale":1,"model":3316,"comment":"Line_Top_Top","pos":[-153.59991455078,-89.228706359863,600],"collision":false,"rotation":[0,0,450]},
+        {"scale":1,"model":3314,"comment":"Line_Top_Bottom","pos":[-153.59991455078,-7.1000008583069,600],"collision":false,"rotation":[0,0,450]},
+        {"scale":1,"model":3351,"comment":"Line_Top_Bottom","pos":[-153.59991455078,35.699989318848,600],"collision":false,"rotation":[0,0,450]},
+        {"scale":1,"model":3353,"comment":"Line_Top_Bottom","pos":[-153.59991455078,92.399963378906,600],"collision":false,"rotation":[0,0,450]},
+        {"scale":1,"model":6257,"comment":"Line_Top_Bottom","pos":[-153.46401977539,-49.524425506592,600],"collision":false,"rotation":[0,0,450]},
+
+
+
+        {"collision":false,"model":3783,"scale":1,"rotation":[0,0,0],"pos":[70.437301635742,109.35646057129,600],"comment":"Object #15"},
+        {"collision":false,"model":3619,"scale":1,"rotation":[0,0,0],"pos":[32.892440795898,105.9097442627,600],"comment":"Object #3"},
+        {"collision":false,"model":17697,"scale":1,"rotation":[0,0,90.98900604248],"pos":[-0.54363632202148,104.08699035645,600],"comment":"Object #3"},
+        {"collision":false,"model":3678,"scale":1,"rotation":[0,0,270],"pos":[-35.26537322998,105,598],"comment":"Object #4"},
+        {"collision":false,"model":3601,"scale":1,"rotation":[0,0,180],"pos":[-61.893882751465,99.335968017578,600],"comment":"Object #5"},
+        {"collision":false,"model":3684,"scale":1,"rotation":[0,0,90],"pos":[93.414428710938,151.96624755859,600],"comment":"Object #6"},
+        {"collision":false,"model":3596,"scale":1,"rotation":[0,0,0],"pos":[63.772903442383,149.77516174316,595],"comment":"Object #7"},
+        {"collision":false,"model":7287,"scale":1,"rotation":[0,0,0],"pos":[31.914569854736,149.47868347168,600],"comment":"Object #8"},
+        {"collision":false,"model":3595,"scale":1,"rotation":[0,0,0],"pos":[-3.0912132263184,148.84986877441,595],"comment":"Object #9"},
+        {"collision":false,"model":3597,"scale":1,"rotation":[0,0,0],"pos":[-35.352958679199,153.01626586914,595],"comment":"Object #10"},
+        {"collision":false,"model":3697,"scale":1,"rotation":[0,0,0],"pos":[-73.183151245117,149.29409790039,600],"comment":"Object #11"},
+
+
+
+        {"collision":false,"model":3783,"scale":1,"rotation":[0,0,180],"pos":[70.437301635742,-109.35646057129,600],"comment":"Object #15"},
+        {"collision":false,"model":3619,"scale":1,"rotation":[0,0,180],"pos":[32.892440795898,-105.9097442627,600],"comment":"Object #3"},
+        {"collision":false,"model":17697,"scale":1,"rotation":[0,0,270],"pos":[-0.54363632202148,-104.08699035645,600],"comment":"Object #3"},
+        {"collision":false,"model":3678,"scale":1,"rotation":[0,0,450],"pos":[-35.26537322998,-105,598],"comment":"Object #4"},
+        {"collision":false,"model":3601,"scale":1,"rotation":[0,0,360],"pos":[-61.893882751465,-99.335968017578,600],"comment":"Object #5"},
+        {"collision":false,"model":3684,"scale":1,"rotation":[0,0,270],"pos":[93.414428710938,-151.96624755859,600],"comment":"Object #6"},
+        {"collision":false,"model":3596,"scale":1,"rotation":[0,0,180],"pos":[63.772903442383,-149.77516174316,595],"comment":"Object #7"},
+        {"collision":false,"model":7287,"scale":1,"rotation":[0,0,180],"pos":[31.914569854736,-149.47868347168,600],"comment":"Object #8"},
+        {"collision":false,"model":3595,"scale":1,"rotation":[0,0,180],"pos":[-3.0912132263184,-148.84986877441,595],"comment":"Object #9"},
+        {"collision":false,"model":3597,"scale":1,"rotation":[0,0,180],"pos":[-35.352958679199,-153.01626586914,595],"comment":"Object #10"},
+        {"collision":false,"model":3697,"scale":1,"rotation":[0,0,180],"pos":[-73.183151245117,-149.29409790039,600],"comment":"Object #11"}
     ]
 }
 

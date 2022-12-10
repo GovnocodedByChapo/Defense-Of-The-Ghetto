@@ -95,7 +95,7 @@ MODULE_HERO.list = {
     {
         name = 'SIDODJI',
         image = {},
-        model = 0,
+        model = 5,
         damage = 30,
         hit_distance = 5,
         hit_speed = 0.6,
@@ -117,8 +117,8 @@ MODULE_HERO.list = {
                 callback = function()
                     lua_thread.create(function()
                         local x, y, z = get_coil_pos(3)
-                        local smoke = createObject(18686, x, y, z)
-                        map.deal_damage_to_point(Vector3D(x, y, z), 1, 50)
+                        local smoke = createObject(18686, x, y, z - 1)
+                        map.deal_damage_to_point(Vector3D(x, y, z - 1), 1, 50)
                         table.insert(map.pool.objects, smoke)
                         wait(3000)
                         deleteObject(smoke)
@@ -134,8 +134,8 @@ MODULE_HERO.list = {
                 callback = function()
                     lua_thread.create(function()
                         local x, y, z = get_coil_pos(6)
-                        local smoke = createObject(18686, x, y, z)
-                        map.deal_damage_to_point(Vector3D(x, y, z), 1, 50)
+                        local smoke = createObject(18686, x, y, z - 1)
+                        map.deal_damage_to_point(Vector3D(x, y, z - 1), 1, 50)
                         table.insert(map.pool.objects, smoke)
                         wait(3000)
                         deleteObject(smoke)
@@ -147,12 +147,12 @@ MODULE_HERO.list = {
                 icon = 'NONE_',
                 mana_required = 50,
                 cooldown = 10,
-                tooltip = '2.5m',
+                tooltip = 'Shadow Fiend razes the ground directly in front of him, dealing damage to enemy units in the area. Adds a stacking damage amplifier on the target that causes the enemy to take bonus Shadowraze damage per stack. Each consecutive stack also decreases turn rate and movement speed.\n\nDamage: 50\nDistance: 2.5m',
                 callback = function()
                     lua_thread.create(function()
                         local x, y, z = get_coil_pos(9)
-                        local smoke = createObject(18686, x, y, z)
-                        map.deal_damage_to_point(Vector3D(x, y, z), 1, 50)
+                        local smoke = createObject(18686, x, y, z - 1)
+                        map.deal_damage_to_point(Vector3D(x, y, z - 1), 1, 50)
                         table.insert(map.pool.objects, smoke)
                         wait(3000)
                         deleteObject(smoke)
@@ -160,18 +160,53 @@ MODULE_HERO.list = {
                 end
             },
             { -- ULT
-                name = '3',
+                name = 'REQUIEM OF SOULS',
                 icon = 'NONE_',
-                mana_required = 50,
-                cooldown = 10,
-                tooltip = 'ULTIMATE BADABOOM',
+                mana_required = 125,
+                cooldown = 110,
+                tooltip = 'Shadow Fiend gathers his captured souls to release them as lines of demonic energy. Units near Shadow Fiend when the souls are released can be damaged by several lines of energy. Any unit damaged by Requiem of Souls will be feared and have its movement speed and magic resistance reduced for 0.9 seconds for each line hit up to a maximum of 2.7. Lines of energy are created for every soul captured through Necromastery.\nRequiem of Souls is automatically cast whenever Shadow Fiend dies, regardless of its cooldown.\n\nDamage: 55',
                 callback = function()
                     lua_thread.create(function()
                         local start = os.clock()
+                        local ultimate_objects = {}
+                        
+                        for i = 0, 360, 30 do
+                            local angle = math.rad(i) + math.pi / 2
+                            local posX, posY, posZ = getCharCoordinates(PLAYER_PED)
+
+                            local start = Vector3D(1 * math.cos(angle) + posX, 1 * math.sin(angle) + posY, posZ - 1)
+                            local stop = Vector3D(20 * math.cos(angle) + posX, 20 * math.sin(angle) + posY, posZ - 1)
+                            local handle = createObject(18686, start.x, start.y, start.z)
+                            ultimate_objects[handle] = {
+                                start = start,
+                                stop = stop
+                            }
+                            table.insert(map.pool.objects, handle)
+                        end
+
                         -- create object
-                        while start + 4 - os.clock() < 0 do
+                        while start + 4 - os.clock() > 0 do
                             wait(0)
-                            -- move object
+                            for handle, data in pairs(ultimate_objects) do
+                                if doesObjectExist(handle) then
+                                    slideObject(handle, data.stop.x, data.stop.y, data.stop.z, 0.5, 0.5, 0.5, false)
+                                    local result, x, y, z = getObjectCoordinates(handle)
+                                    if result then
+                                        map.deal_damage_to_point(Vector3D(x, y, z), 1, 55)
+                                    end
+                                end
+                            end
+                        end
+                        for handle, data in pairs(ultimate_objects) do
+                            if doesObjectExist(handle) then
+                                deleteObject(handle)
+                                ultimate_objects[handle] = nil
+                                --for k, v in ipairs(map.pool.objects) do
+                                --    if v == handle then
+                                --        map.pool.objects[k] = nil
+                                --    end
+                                --end
+                            end
                         end
                     end)
                 end

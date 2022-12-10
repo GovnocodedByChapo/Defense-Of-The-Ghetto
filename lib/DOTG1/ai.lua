@@ -67,8 +67,19 @@ AI.tower_loop = function()
     end)
 end
 
-AI.creep_loop = function(creep_handle, creep_side, creep_route_index)
+AI.process_creep_ai = function(handle, gang, route_end)
     
+end
+
+AI.create_creep = function(gang, route_start, route_end)
+    --local new_creep = createChar(4, gang == SIDE_GROOVE and 105 or 104, route_start.x, route_start.y, route_start.z)
+    --map.pool.bots[new_creep] = 'creep_'..(gang == 0 and 'groove' or 'ballas')
+    --lua_thread.create(function()
+    --    while doesCharExist(new_creep) do
+    --        wait(0)
+    --        taskCharSlideToCoord(new_creep, route_end.x, route_end.y, route_end.z, 0, 1)
+    --    end
+    --end)
 end
 
 return AI

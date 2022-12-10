@@ -27,7 +27,8 @@ MODULE_UI = {
 local index_names = {
     [1] = 'Q',
     [2] = 'W',
-    [3] = 'E'
+    [3] = 'E',
+    [4] = 'R'
 }
 
 function imgui.CenterText(text)
@@ -121,7 +122,7 @@ end
 
 MODULE_UI.draw_game_hud = function()
     local resX, resY = getScreenResolution()
-    imgui.SetNextWindowSize(imgui.ImVec2(resX / 3, resY / 7), imgui.Cond.Always)
+    imgui.SetNextWindowSize(imgui.ImVec2(resX / 2.8, resY / 7), imgui.Cond.Always)
     imgui.SetNextWindowPos(imgui.ImVec2(resX / 2, resY - resY / 7), imgui.Cond.Always, imgui.ImVec2(0.5, 0))
     if imgui.Begin('dotg1_hud', _, imgui.WindowFlags.NoDecoration) then
         local size = imgui.GetWindowSize()
@@ -152,13 +153,21 @@ MODULE_UI.draw_game_hud = function()
                 if cd >= 0 then 
                     local cd_proc = aSize.x / 100 * math.floor(cd * 100 / ability.cooldown)
                     _dl:AddRectFilled(_start, imgui.ImVec2(_start.x + cd_proc, _start.y + aSize.y), 0xCC000000)
-
                     imgui.PushFont(MODULE_UI.font[20])
                     imgui.CenterText(tostring(math.ceil(cd))) 
                     imgui.PopFont()
                 end
+                if ability.mana_required then
+                    if local_player.mana < ability.mana_required then
+                        _dl:AddRectFilled(_start, imgui.ImVec2(_start.x + aSize.x, _start.y + aSize.y), imgui.GetColorU32Vec4(imgui.ImVec4(0.11, 0.26, 1, 0.4)))
+                    end
+                    local mana_text_size = imgui.CalcTextSize(tostring(ability.mana_required))
+                    imgui.SetCursorPos(imgui.ImVec2(aSize.x - mana_text_size.x - 3, aSize.y - mana_text_size.y - 3))
+                    imgui.Text(tostring(ability.mana_required))
+                end
 
-                -->> key tooltip
+                -->> items
+                
                 
                 imgui.EndChild()
             end
@@ -173,31 +182,32 @@ MODULE_UI.draw_game_hud = function()
             end
         end
 
-        
 
-        imgui.SetCursorPos(imgui.ImVec2(10 + size.y - 20 + 10, size.y / 1.6))
+        -->> BARS
+        do
+            imgui.SetCursorPos(imgui.ImVec2(10 + size.y - 20 + 10, size.y / 1.6))
+            imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0, 0, 0, 0))
+            imgui.PushStyleColor(imgui.Col.PlotHistogram, imgui.ImVec4(0.64, 0.03, 0.03, 1))
+            imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(0.22, 0.02, 0.02, 1))
+            --imgui.SetCursorPosX(size.x / 2 - bar_size_x / 2)
+            imgui.ProgressBar(math.floor(local_player.get('health') * 100 / local_player.get('max_health')) / 100, imgui.ImVec2(bar_size_x, 20))
+            imgui.SameLine()
+            imgui.PopStyleColor(3)
+            imgui.CenterText(tostring(local_player.get('health')))
+            imgui.SameLine(500)
+            imgui.Text('+'..tostring(local_player.get('regen_health')))
 
-        imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0, 0, 0, 0))
-        imgui.PushStyleColor(imgui.Col.PlotHistogram, imgui.ImVec4(0.64, 0.03, 0.03, 1))
-        imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(0.22, 0.02, 0.02, 1))
-        --imgui.SetCursorPosX(size.x / 2 - bar_size_x / 2)
-        imgui.ProgressBar(math.floor(local_player.get('health') * 100 / local_player.get('max_health')) / 100, imgui.ImVec2(bar_size_x, 20))
-        imgui.SameLine()
-        imgui.PopStyleColor(3)
-        imgui.CenterText(tostring(local_player.get('health')))
-        imgui.SameLine(500)
-        imgui.Text('+'..tostring(local_player.get('regen_health')))
-
-        imgui.SetCursorPos(imgui.ImVec2(10 + size.y - 20 + 10, size.y / 1.6 + 25))
-        imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0, 0, 0, 0))
-        imgui.PushStyleColor(imgui.Col.PlotHistogram, imgui.ImVec4(0.11, 0.26, 1, 1))
-        imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(0.08, 0.12, 0.33, 1))
-        imgui.ProgressBar(math.floor(local_player.get('mana') * 100 / local_player.get('max_mana')) / 100, imgui.ImVec2(bar_size_x, 20))
-        imgui.SameLine()
-        imgui.PopStyleColor(3)
-        imgui.CenterText(tostring(local_player.get('mana')))
-        imgui.SameLine(500)
-        imgui.Text('+'..tostring(local_player.get('regen_mana')))
+            imgui.SetCursorPos(imgui.ImVec2(10 + size.y - 20 + 10, size.y / 1.6 + 25))
+            imgui.PushStyleColor(imgui.Col.Text, imgui.ImVec4(0, 0, 0, 0))
+            imgui.PushStyleColor(imgui.Col.PlotHistogram, imgui.ImVec4(0.11, 0.26, 1, 1))
+            imgui.PushStyleColor(imgui.Col.FrameBg, imgui.ImVec4(0.08, 0.12, 0.33, 1))
+            imgui.ProgressBar(math.floor(local_player.get('mana') * 100 / local_player.get('max_mana')) / 100, imgui.ImVec2(bar_size_x, 20))
+            imgui.SameLine()
+            imgui.PopStyleColor(3)
+            imgui.CenterText(tostring(local_player.get('mana')))
+            imgui.SameLine(500)
+            imgui.Text('+'..tostring(local_player.get('regen_mana')))
+        end
 
         imgui.SetCursorPos(imgui.ImVec2(size.x - 10 - 40, 10))
         if imgui.Button('CAM', imgui.ImVec2(40, 20)) then
@@ -208,6 +218,30 @@ MODULE_UI.draw_game_hud = function()
                 restoreCameraJumpcut()
             end
         end
+
+        -->> ITEMS
+        imgui.SetCursorPos(imgui.ImVec2(size.x - 200, 10))
+        local slot_size = imgui.ImVec2(55, 35)
+        local child_size = imgui.ImVec2(slot_size.x * 3, slot_size.y * 2)
+        
+        imgui.SetCursorPos(imgui.ImVec2(size.x - slot_size.x * 3 - (8 * 3), 10))
+        imgui.PushStyleVarVec2(imgui.StyleVar.WindowPadding, imgui.ImVec2(0, 0))
+        for slot = 1, 6 do
+            if imgui.BeginChild('inventory_slot_'..tostring(slot), slot_size, true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse) then
+                if local_player.items[slot] then
+                    if items.list[local_player.items[slot]] then
+                        imgui.Image(items.list[local_player.items[slot]].icon, slot_size)
+                    end
+                end
+                imgui.EndChild() 
+            end
+            if slot ~= 3 then
+                imgui.SameLine()
+            else
+                imgui.SetCursorPos(imgui.ImVec2(size.x - slot_size.x * 3 - (8 * 3), 10 + slot_size.y + 6))
+            end
+        end
+        imgui.PopStyleVar()
 
         imgui.End()
     end

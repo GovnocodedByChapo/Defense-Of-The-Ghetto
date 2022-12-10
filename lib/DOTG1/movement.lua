@@ -63,7 +63,6 @@ MOVEMENT.loop = function()
             MOVEMENT.target_handle = nil
         end
         
-
         MOVEMENT.go_to_coords = true
         MOVEMENT.go_to_coords_coords = pos
         table.insert(MOVEMENT.circles, {
@@ -86,6 +85,7 @@ MOVEMENT.loop = function()
                 MOVEMENT.target_handle = nil
             end
         end
+        --print(PLAYER_PED, go_to.x, go_to.y, go_to.z, getCharHeading(PLAYER_PED), 1)
         taskCharSlideToCoord(PLAYER_PED, go_to.x, go_to.y, go_to.z, getCharHeading(PLAYER_PED), 1)
         --taskCharSlideToCoordAndPlayAnim(PLAYER_PED, go_to.x, go_to.y, go_to.z, 0, 1, PLAYER.hero.hit_animation.name, PLAYER.hero.hit_animation.file, 100, false, false, false, false, false)
                 

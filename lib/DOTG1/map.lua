@@ -12,183 +12,11 @@ local local_player = require('DOTG1.local_player')
 MODULE_MAP = {
     CURSOR_POINTER = nil,
     required_models = {
-        4, 103, 105, 107, 149, 269, 336, 339, 359
+        5, 103, 104, 105, 107, 149, 269, 336, 339, 359
     },
     tower_model = 3286, 
     pos = Vector3D(0, 0, 600),
-    items = {
-        {
-            comment = 'comment',
-            model = 19999,
-            pos = Vector3D(0, 0, 0),
-            rotation = Vector3D(0, 0, 0),
-            collision = true,
-            scale = 1
-        },
-        --[[
-        {
-            comment = 'floor_center',
-            model = 18754,
-            pos = Vector3D(0, 0, 0),
-            rotation = Vector3D(0, 0, 0),
-            collision = true,
-            scale = 1
-        },
-        ]]
-
-        {
-            comment = 'floor_1',
-            model = 19551,
-            pos = Vector3D(-125, 0, 0),
-            rotation = Vector3D(0, 0, 0),
-            collision = true,
-            scale = 1
-        },
-        {
-            comment = 'floor_2_center',
-            model = 19550,
-            pos = Vector3D(0, 0, 0),
-            rotation = Vector3D(0, 0, 0),
-            collision = true,
-            scale = 1
-        },
-        {
-            comment = 'floor_3',
-            model = 19550,
-            pos = Vector3D(125, 0, 0),
-            rotation = Vector3D(0, 0, 0),
-            collision = true,
-            scale = 1
-        },
-        ------
-        {
-            comment = 'floor_4',
-            model = 19551,
-            pos = Vector3D(-125, 125, 0),
-            rotation = Vector3D(0, 0, 0),
-            collision = true,
-            scale = 1
-        },
-        {
-            comment = 'floor_5',
-            model = 19551,
-            pos = Vector3D(0, 125, 0),
-            rotation = Vector3D(0, 0, 0),
-            collision = true,
-            scale = 1
-        },
-        {
-            comment = 'floor_6',
-            model = 19550,
-            pos = Vector3D(125, 125, 0),
-            rotation = Vector3D(0, 0, 0),
-            collision = true,
-            scale = 1
-        },
-       ------
-       {
-        comment = 'floor_4',
-        model = 19550,
-        pos = Vector3D(-125, -125, 0),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 1
-    },
-    {
-        comment = 'floor_5',
-        model = 19550,
-        pos = Vector3D(0, -125, 0),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 1
-    },
-    {
-        comment = 'floor_6',
-        model = 19550,
-        pos = Vector3D(125, -125, 0),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 1
-    },
-
-
-    -->> LINES TREES
-    --[[
-    {
-        comment = 'tree_groove_ez_1',
-        model = 16061,
-        pos = Vector3D(138, -19, 597),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 0.5,
-        dont_use_offset = true
-    },
-    {
-        comment = 'tree_groove_ez_2',
-        model = 16061,
-        pos = Vector3D(125, -27, 597),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 0.5,
-        dont_use_offset = true
-    },
-    {
-        comment = 'tree_groove_ez_3',
-        model = 16061,
-        pos = Vector3D(125, -83, 597),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 0.5,
-        dont_use_offset = true
-    },
-    {
-        comment = 'tree_groove_ez_4',
-        model = 16061,
-        pos = Vector3D(138, -69, 597),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 0.5,
-        dont_use_offset = true
-    },
-
-    {
-        comment = 'tree_groove_ez_1',
-        model = 16061,
-        pos = Vector3D(175, -19, 597),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 0.5,
-        dont_use_offset = true
-    },
-    {
-        comment = 'tree_groove_ez_2',
-        model = 16061,
-        pos = Vector3D(175 - 10, -27, 597),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 0.5,
-        dont_use_offset = true
-    },
-    {
-        comment = 'tree_groove_ez_3',
-        model = 16061,
-        pos = Vector3D(175, -83, 597),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 0.5,
-        dont_use_offset = true
-    },
-    {
-        comment = 'tree_groove_ez_4',
-        model = 16061,
-        pos = Vector3D(175, -69, 597),
-        rotation = Vector3D(0, 0, 0),
-        collision = true,
-        scale = 0.5,
-        dont_use_offset = true
-    },
-    ]]
-    },
+    items = {},
     pool = {
         objects = {},
         bots = {
@@ -200,7 +28,7 @@ MODULE_MAP = {
         [1] = {}
     },
     bot_spawn_pos = {
-        [0] = Vector3D(0, 0, 0),
+        [0] = Vector3D(0, 0, 0), 
         [1] = Vector3D(1, 1, 1)
     }
 }
@@ -233,10 +61,6 @@ MODULE_MAP.deal_damage_to_point = function(point, radius, damage, team_damage)
             end
         end
     end
-end
-
-MODULE_MAP.apply_hero_to_player = function()
-
 end
 
 MODULE_MAP.spawn_background = function()
@@ -314,7 +138,6 @@ MODULE_MAP.spawn_creep_stack = function(side, spawnpoint_index)
     return stack_size, stack_handles
 end
 
-
 MODULE_MAP.spawn_tower = function(pos, side)
     local tower_model = 3286--3279
     local new_object = createObject(MODULE_MAP.tower_model, pos.x, pos.y, pos.z - 4.5)
@@ -344,7 +167,8 @@ end
 
 MODULE_MAP.create_map = function()
     MODULE_MAP.CURSOR_POINTER = createObject(19605, MODULE_MAP.pos.x, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 10) 
-    setObjectScale(MODULE_MAP.CURSOR_POINTER, 0)
+    --setObjectVisible(MODULE_MAP.CURSOR_POINTER, false)
+    --setObjectScale(MODULE_MAP.CURSOR_POINTER, 0)
     --setObjectCollision(MODULE_MAP.CURSOR_POINTER, false)
     MODULE_MAP.spawn_tower(Vector3D(MODULE_MAP.pos.x + 125 + 27, MODULE_MAP.pos.y + 0, MODULE_MAP.pos.z), SIDE_GROOVE) -- groove down 1
     MODULE_MAP.spawn_tower(Vector3D(MODULE_MAP.pos.x + 125 + 27, MODULE_MAP.pos.y - 80, MODULE_MAP.pos.z), SIDE_GROOVE) -- groove down 2
@@ -384,16 +208,6 @@ MODULE_MAP.destroy_map = function()
     end
 end
 
---[[
-MODULE_MAP.spawn_bot = function(side)
-    assert(core[side], 'MODULE_MAP.lua -> spawn_bot(): incorrect side name, use core.SIDE.GROOVE (0) or core.SIDE.BALLAS (1)')
-    local new_bot = createChar(4, math.random(MODULE_MAP.bot_models[side]), MODULE_MAP.pos.x + MODULE_MAP.bot_spawn_pos[side].x, MODULE_MAP.pos.y + MODULE_MAP.bot_spawn_pos[side].y, MODULE_MAP.pos.z + MODULE_MAP.bot_spawn_pos[side].z)
-    --table.insert(MODULE_MAP.pool.bots, new_bot)
-end
-]]
-
-
-
 MODULE_MAP.draw_building_circles = function()
     for k, v in ipairs(MODULE_MAP.pool.objects) do
         if doesObjectExist(v) then
@@ -412,6 +226,7 @@ local creep_movement = function(ped, move_points)
 end
 
 MODULE_MAP.bots_ai = function()
+    --[[
     for ped, tag in pairs(MODULE_MAP.pool.bots) do
 
         if tag:find('creep_(.+)') then
@@ -439,6 +254,7 @@ MODULE_MAP.bots_ai = function()
             end
         end
     end
+    ]]
 end
 
 MODULE_MAP.draw_circle_on_target = function()
@@ -499,17 +315,50 @@ MODULE_MAP.get_maps_list = function()
     return getFilesInPath(getWorkingDirectory()..'\\lib\\DOTG1\\maps', '*.json')
 end
 
+MODULE_MAP.load_ai_for_creep = function(ai_loop_start, handle, team, route_end)
+    lua_thread.create(function()
+        while true do
+            wait(0)
+            if doesCharExist(handle) then
+                --local status, result = pcall(taskCharSlideToCoord, handle, route_end.x, route_end.y, route_end.z, 0, 1)
+                --if not status then
+                --    print('[MAP][AI] Error, handle: '..handle..': '..result)
+                --end
+                taskCharSlideToCoord(handle, route_end.x, route_end.y, route_end.z, 0, 1)
+            else
+                return print('[MAP][AI] Creep brains disabled, creep not found. Team: '..team)
+            end
+        end
+    end)
+end
+
 MODULE_MAP.load_map = function(file, team, teleport_on_spawn)
     assert(doesFileExist(getWorkingDirectory()..'\\lib\\DOTG1\\maps\\'..file), 'map "'..file..'" not found!')
     local F = io.open(getWorkingDirectory()..'\\lib\\DOTG1\\maps\\'..file, 'r')
     local JSON = F:read('*all')
     F:close()
     assert(#JSON > 0, 'JSON (map data) is empty!')
+
+    -->> POINTER
+    if MODULE_MAP.CURSOR_POINTER and doesObjectExist(MODULE_MAP.CURSOR_POINTER) then
+        deleteObject(MODULE_MAP.CURSOR_POINTER)
+    end
+    MODULE_MAP.CURSOR_POINTER = createObject(19605, 0, 0, 0) 
+    setObjectVisible(MODULE_MAP.CURSOR_POINTER, true)
+
     local data = decodeJson(JSON)
     local team = team or 0
+
+    -->> spawn rock bg
+    if data.spawn_rock_background then
+        MODULE_MAP.spawn_background()
+    end
+    
     -->> spawn objects
     for index, data in ipairs(data.objects) do
-        local opos = Vector3D(MODULE_MAP.pos.x + data.pos[1], MODULE_MAP.pos.y + data.pos[2], MODULE_MAP.pos.z + data.pos[3])
+        --local opos = Vector3D(MODULE_MAP.pos.x + data.pos[1], MODULE_MAP.pos.y + data.pos[2], MODULE_MAP.pos.z + data.pos[3])
+        local opos = Vector3D(data.pos[1], data.pos[2], data.pos[3])
+        
         local new_object = createObject(data.model, opos.x, opos.y, opos.z)
         setObjectRotation(new_object, data.rotation[1], data.rotation[2], data.rotation[3])
         setObjectScale(new_object, data.collision or true)
@@ -527,6 +376,17 @@ MODULE_MAP.load_map = function(file, team, teleport_on_spawn)
 
     -->> teleport
     setCharCoordinates(PLAYER_PED, table.unpack(data.spawn_point[team + 1]))
+
+    -->> creeps ai
+    for creep_team, creep_routes in pairs(data.creeps_routes) do
+        for i = 1, tonumber(creep_routes.creeps_count) do
+            local route_start = Vector3D(creep_routes.spawn[1], creep_routes.spawn[2], creep_routes.spawn[3])
+            local new_creep = createChar(4, creep_team - 1 == SIDE_GROOVE and 105 or 104, route_start.x - i / 6, route_start.y, route_start.z)
+            MODULE_MAP.pool.bots[new_creep] = 'creep_'..(creep_team - 1 == 0 and 'groove' or 'ballas')..'_'..encodeJson(creep_routes.stop)
+            MODULE_MAP.set_hp(new_creep, 300)
+            MODULE_MAP.load_ai_for_creep(os.clock(), new_creep, creep_team - 1, Vector3D(creep_routes.stop[1], creep_routes.stop[2], creep_routes.stop[3]))
+        end
+    end
 end
 
 --[[
