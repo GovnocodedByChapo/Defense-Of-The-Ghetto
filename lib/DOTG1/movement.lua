@@ -22,27 +22,28 @@ MOVEMENT.setup_key_hook = function()
     
 end
 
-MOVEMENT.get_pointer_pos = function()
+MOVEMENT.get_pointer_pos = function(custom)
+    local args = custom or {true, true, false, true, false, false, false}
     local curX, curY = getCursorPos()
     local resX, resY = getScreenResolution()
     local posX, posY, posZ = convertScreenCoordsToWorld3D(curX, curY, 700.0)
     local camX, camY, camZ = getActiveCameraCoordinates()
-    local result, colpoint = processLineOfSight(camX, camY, camZ, posX, posY, posZ, true, true, false, true, false, false, false)
+    local result, colpoint = processLineOfSight(camX, camY, camZ, posX, posY, posZ, table.unpack(args))
     if result and colpoint.entity ~= 0 then
         local normal = colpoint.normal
         local pos = Vector3D(colpoint.pos[1], colpoint.pos[2], colpoint.pos[3]) - (Vector3D(normal[1], normal[2], normal[3]) * 0.1)
         local zOffset = 300
         if normal[3] >= 0.5 then zOffset = 1 end
-        local result, colpoint2 = processLineOfSight(pos.x, pos.y, pos.z + zOffset, pos.x, pos.y, pos.z - 0.3, true, true, false, true, false, false, false)
+        local result, colpoint2 = processLineOfSight(pos.x, pos.y, pos.z + zOffset, pos.x, pos.y, pos.z - 0.3, table.unpack(args))
         if result then
-            return Vector3D(colpoint2.pos[1], colpoint2.pos[2], colpoint2.pos[3])
+            return Vector3D(colpoint2.pos[1], colpoint2.pos[2], colpoint2.pos[3]), colpoint2
         end
     end
-    return Vector3D(0, 0, 0)
+    return Vector3D(0, 0, 0), colpoint
 end
 
 MOVEMENT.loop = function()
-    local pos = MOVEMENT.get_pointer_pos()
+    local pos = MOVEMENT.get_pointer_pos(nil)
     if wasKeyPressed(VK_RBUTTON) then
         local beat_target = false
         if doesObjectExist(map.CURSOR_POINTER) then

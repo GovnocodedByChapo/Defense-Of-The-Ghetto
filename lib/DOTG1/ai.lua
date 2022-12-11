@@ -33,7 +33,7 @@ AI.tower_loop = function()
                                         local target_s_x, target_s_y = convert3DCoordsToScreen(targetX, targetY, targetZ)
                                         renderDrawLine(tower_s_x, tower_s_y, target_s_x, target_s_y, 4, 0xCCff0000)
                                         local start = os.clock()
-                                        local rocket = createObject(345, pedX, pedY, pedZ)
+                                        local rocket = createObject(345, pedX, pedY, pedZ + 5)
                                         setObjectCollision(rocket, false)
                                         table.insert(map.pool.objects, rocket)
                                         

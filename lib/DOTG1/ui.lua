@@ -338,6 +338,8 @@ MODULE_UI.draw_health_bars = function(DL)
         local max_hp = handle == PLAYER_PED and local_player.max_health or 100
         if tag:find('creep_') then
             max_hp = 300
+        elseif tag:find('tower_') then
+            max_hp = 1000
         end
         if doesCharExist(handle) and isCharOnScreen(handle) then
             local ped = Vector3D(getCharCoordinates(handle))
@@ -355,7 +357,7 @@ MODULE_UI.draw_health_bars = function(DL)
                 DL:AddRectFilled(imgui.ImVec2(_start.x + 1, _start.y + 1), imgui.ImVec2(_start.x + health_end - 1, _end.y - 1), 0xFF0000ff, 5)
                 
             end
-            DL:AddText(imgui.ImVec2(_end.x, _start.y), 0xFFffffff, result and tostring(hp)..'/'..tostring(max_hp) or 'none, '..tostring(ped))
+            DL:AddText(imgui.ImVec2(_end.x, _start.y), 0xFFffffff, result and tostring(hp)..'/'..tostring(max_hp)..' (HANDLE: '..tostring(handle)..')' or 'none, '..tostring(ped))
             --math.floor(hp * 100 / max_hp)
 
            
