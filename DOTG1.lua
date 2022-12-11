@@ -129,10 +129,8 @@ local selection_pos = imgui.ImVec2(0, 0)
 pedGoTo = taskCharSlideToCoord
 taskCharSlideToCoord = function(...)
     local status, result = pcall(pedGoTo, ...)
-    if status then
-        print('[PEDGOTO] ALLOK: '..table.concat({...}, ', '))
-    else
-        print('[PEDGOTO] FATAL: '..table.concat({...}, ', '), result)
+    if not status then
+        print('[PEDGOTO] '..(status and 'ALL OK' or 'FATAL')..': '..table.concat({...}, ', '), result)
     end
 end
 local ui_frame = imgui.OnFrame(
@@ -217,6 +215,8 @@ addEventHandler('onWindowMessage', function(msg, key)
     end
 end)
 
+local render_font = renderCreateFont('Trebuchet MS', 13, 5)
+
 -->> Inits and loops
 function main()
     while not isSampAvailable() do wait(0) end
@@ -237,6 +237,15 @@ function main()
         end)
     end)
 
+    sampRegisterChatCommand('dota.getherecreep', function(arg)
+        local handle = tonumber(arg)
+        if handle and doesCharExist(handle) then
+            setCharCoordinates(handle, getCharCoordinates(PLAYER_PED))
+        else
+            return sampAddChatMessage('incorrect handle', -1)
+        end
+    end)
+
     sampRegisterChatCommand('dotg.loadmap', function(arg)
         if doesFileExist(getWorkingDirectory()..'\\lib\\DOTG1\\maps\\'..arg) then
             local F = io.open(getWorkingDirectory()..'\\lib\\DOTG1\\maps\\'..arg, 'r')
@@ -246,10 +255,6 @@ function main()
         else
             sampAddChatMessage('map not found!', -1)
         end
-    end)
-
-    sampRegisterChatCommand('spawncreeps', function()
-        map.spawn_creep_stack(SIDE_GROOVE, 3)
     end)
     
     -->> INIT DOTG1
@@ -288,12 +293,51 @@ function main()
             end
 
             -->> PED highlight
-            do
-                for handle, tag in pairs(map.pool.bots) do
-                    local x, y, z = getCharCoordinates(handle)
-                    if map.get_distance_from_pointer(x, y, z) < 1 then
-                        drawShadow(3, x, y, z + 1, 0.0, 1, 1, 1, 0, 0) 
-                        drawLightWithRange(x, y, z + 2, 255, 0, 0, 10)  -- 09E5
+            for handle, tag in pairs(map.pool.bots) do
+                local x, y, z = getCharCoordinates(handle)
+                if map.get_distance_from_pointer(x, y, z) < 1 then
+                    drawShadow(3, x, y, z + 1, 0.0, 1, 1, 1, 0, 0) 
+                    drawLightWithRange(x, y, z + 2, 255, 0, 0, 10)  -- 09E5
+                end
+            end
+
+            -- test: attack object (tower)
+            if false and wasKeyPressed(2) then
+                for index, handle in ipairs(map.pool.objects) do
+                    if doesObjectExist(handle) then
+                        if getObjectModel(handle) == map.tower_model then
+                            local result, x, y, z = getObjectCoordinates(handle)
+                            if result then
+                                local p = movement.get_pointer_pos()
+                                if getDistanceBetweenCoords3d(p.x, p.y, p.z, x, y, z) <= 6 and p.z > map.pos.z + 4 then
+                                    sampAddChatMessage('123', -1)
+
+                                    map.deal_damage_to_point(p, 10, 50)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+
+            -->> destroy towers
+            
+            if wasKeyPressed(VK_RBUTTON) then
+                for index, data in ipairs(map.pool.towers) do
+                    if doesObjectExist(data.object) and doesCharExist(data.ped) then
+                        --if data.gang ~= local_player.PLAYER.team then
+                            local result, x, y, z = getObjectCoordinates(data.object)
+                            if result then
+                                local rx, ry = convert3DCoordsToScreen(x, y, z)
+                                renderDrawPolygon(x, y, 10, 10, 5, 0, 0xFFff004d)
+                                local pointer, col = movement.get_pointer_pos()
+                               
+                                if getDistanceBetweenCoords3d(pointer.x, pointer.y, pointer.z, x, y, z) <= 5 then
+                                    sampAddChatMessage('beat tower!', -1)
+                                    break
+                                end
+                            end
+                        --end
                     end
                 end
             end
