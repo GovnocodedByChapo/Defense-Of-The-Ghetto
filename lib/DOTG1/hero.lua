@@ -201,11 +201,6 @@ MODULE_HERO.list = {
                             if doesObjectExist(handle) then
                                 deleteObject(handle)
                                 ultimate_objects[handle] = nil
-                                --for k, v in ipairs(map.pool.objects) do
-                                --    if v == handle then
-                                --        map.pool.objects[k] = nil
-                                --    end
-                                --end
                             end
                         end
                     end)

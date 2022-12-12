@@ -6,21 +6,64 @@
     ],
     "creeps_routes": [
         {
+            "comment":"groove_center",
+            "team":0,
             "creeps_count": 5,
             "spawn":[125, -125, 601],
             "center":[0, 0, 601],
-            "stop":[-125, 125, 601]
+            "stop":[-175, 175, 601]
         },
         {
+            "comment":"groove_bottom",
+            "team":0,
+            "creeps_count": 5,
+            "spawn":[125, -125, 601],
+            "center":[125, 125, 601],
+            "stop":[-175, 175, 601]
+        },
+        {
+            "comment":"groove_top",
+            "team":0,
+            "creeps_count": 5,
+            "spawn":[125, -125, 601],
+            "center":[-125, -125, 601],
+            "stop":[-175, 175, 601]
+        },
+
+        {
+            "comment":"ballas_center",
+            "team":1,
             "creeps_count": 5,
             "spawn":[-125, 125, 601],
             "center":[0, 0, 601],
-            "stop":[125, -125, 601]
+            "stop":[175, -175, 601]
+        },
+        {
+            "comment":"ballas_bottom",
+            "team":1,
+            "creeps_count": 5,
+            "spawn":[-125, 125, 601],
+            "center":[125, 125, 601],
+            "stop":[175, -175, 601]
+        },
+        {
+            "comment":"ballas_top",
+            "team":1,
+            "creeps_count": 5,
+            "spawn":[-125, 125, 601],
+            "center":[-125, -125, 601],
+            "stop":[175, -175, 601]
         }
     ],
-    "fountains": [
-        [150, -150, 600],
-        [-150, 150, 600]
+    "thrones": [
+        {
+            "team":0,
+            "pos": [175, -175, 600]
+        },
+        {
+            "team":1,
+            "pos": [-175, 175, 600]
+        }
     ],
     "towers": [
         [

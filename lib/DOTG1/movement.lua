@@ -86,25 +86,12 @@ MOVEMENT.loop = function()
                 MOVEMENT.target_handle = nil
             end
         end
-        --print(PLAYER_PED, go_to.x, go_to.y, go_to.z, getCharHeading(PLAYER_PED), 1)
-        taskCharSlideToCoord(PLAYER_PED, go_to.x, go_to.y, go_to.z, getCharHeading(PLAYER_PED), 1)
-        --taskCharSlideToCoordAndPlayAnim(PLAYER_PED, go_to.x, go_to.y, go_to.z, 0, 1, PLAYER.hero.hit_animation.name, PLAYER.hero.hit_animation.file, 100, false, false, false, false, false)
-                
+        taskCharSlideToCoord(PLAYER_PED, go_to.x, go_to.y, go_to.z, getCharHeading(PLAYER_PED), 1) 
         setGameKeyState(16, 256)
         if getDistanceBetweenCoords3d(ped.x, ped.y, ped.z, go_to.x,  go_to.y,  go_to.z) <= 1.5 then
-            if MOVEMENT.target_handle then
-            --    local target = Vector3D(getCharCoordinates(MOVEMENT.target_handle))
-            --    local player = Vector3D(getCharCoordinates(PLAYER_PED))
-            --    if getDistanceBetweenCoords3d(target.x, target.y, target.z, player.x, player.y, player.z) > 1 then
-            --       -- taskCharSlideToCoord(PLAYER_PED, target.x, target.y, target.z, getCharHeading(PLAYER_PED), 1)
-            --    else
-            --        --clearCharTasksImmediately(PLAYER_PED)     
-            --    end
-                   
-            else
+            if not MOVEMENT.target_handle then
                 MOVEMENT.go_to_coords = false
             end
-
         end
     end
 end

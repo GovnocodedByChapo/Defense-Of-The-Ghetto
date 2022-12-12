@@ -7,7 +7,7 @@
 GAME_STATE = { NONE = 0, MAIN_MENU = 1, HERO_SELECT = 2, IN_GAME = 3 }
 LOCAL_PLAYER = {
     PLAYER = {
-        STATE = GAME_STATE.HERO_SELECT,
+        STATE = GAME_STATE.NONE,
         selected_map = 'none',
         hero = 1,
         team = 0,

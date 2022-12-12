@@ -1,4 +1,4 @@
---[[pointer
+--[[
     map.lua:
         This file is a part of the DOTG1 mini-game.
         Author: chapo
@@ -8,8 +8,10 @@
 local Vector3D = require('vector3d')
 local memory = require('memory')
 local local_player = require('DOTG1.local_player')
---local core = require('DOTG1.core')
-MODULE_MAP = {
+local render_font = renderCreateFont('Trebuchet MS', 8, 5)
+local DEBUG = false
+
+SIDE_GROOVE, SIDE_BALLAS, MODULE_MAP = 0, 1, {
     CURSOR_POINTER = nil,
     required_models = {
         5, 103, 104, 105, 107, 149, 269, 336, 339, 359
@@ -21,6 +23,7 @@ MODULE_MAP = {
         towers = {},
         objects = {},
         bots = { [PLAYER_PED] = 'player_groove'},
+        throns = {}
     },
     bot_models = {
         [0] = {},
@@ -31,8 +34,28 @@ MODULE_MAP = {
         [1] = Vector3D(1, 1, 1)
     }
 }
-SIDE_GROOVE, SIDE_BALLAS = 0, 1
 
+MODULE_MAP.spawn_throne = function(pos, gang)
+    assert(gang, 'error spawning throne, missed arg #2 (gang index 0/1)')
+    local o1 = createObject(6965, pos.x, pos.y, pos.z + 1)
+    local o2 = createObject(9833, pos.x - 0.5, pos.y, pos.z + 9  )
+    local o3 = createObject(348, pos.x - 1.5, pos.y, pos.z + 15)
+    local o4 = createObject(348, pos.x + 1.5, pos.y, pos.z + 15)
+    setObjectRotation(o3, 0, 270+45, 0)
+    setObjectRotation(o4, 0, 270 + 45, 180)
+    setObjectScale(o3, 15)
+    setObjectScale(o4, 15)
+    table.insert(MODULE_MAP.pool.objects, o1)
+    table.insert(MODULE_MAP.pool.objects, o2)
+    table.insert(MODULE_MAP.pool.objects, o3)
+    table.insert(MODULE_MAP.pool.objects, o4)
+    table.insert(MODULE_MAP.pool.throns, {
+        base = o1,
+        w1 = o2,
+        w2 = o3,
+        dick = o4
+    })
+end
 
 MODULE_MAP.deal_damage_to_point = function(point, radius, damage, team_damage)
     for ped, tag in pairs(MODULE_MAP.pool.bots) do
@@ -75,22 +98,6 @@ MODULE_MAP.spawn_background = function()
         setObjectScale(no, 1.5)
         table.insert(MODULE_MAP.pool.objects, no)
     end
-
-    local f = createObject(6965, MODULE_MAP.pos.x, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 1)
-    table.insert(MODULE_MAP.pool.objects, f)
-
-    local f = createObject(9833, MODULE_MAP.pos.x - 0.5, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 9  )
-    table.insert(MODULE_MAP.pool.objects, f)
-
-    local f = createObject(348, MODULE_MAP.pos.x - 1.5, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 15)
-    setObjectRotation(f, 0, 270+45, 0)
-    setObjectScale(f, 15)
-    table.insert(MODULE_MAP.pool.objects, f)
-
-    local f = createObject(348, MODULE_MAP.pos.x + 1.5, MODULE_MAP.pos.y, MODULE_MAP.pos.z + 15)
-    setObjectRotation(f, 0, 270 + 45, 180)
-    setObjectScale(f, 15)
-    table.insert(MODULE_MAP.pool.objects, f)
 end
 
 MODULE_MAP.set_hp = function(ped, hp)
@@ -173,10 +180,6 @@ MODULE_MAP.draw_building_circles = function()
             end
         end
     end
-end
-
-local creep_movement = function(ped, move_points)
-    
 end
 
 MODULE_MAP.bots_ai = function()
@@ -268,15 +271,20 @@ MODULE_MAP.get_maps_list = function()
     assert(doesDirectoryExist(getWorkingDirectory()..'\\lib\\DOTG1\\maps'), 'maps path not found!')
     return getFilesInPath(getWorkingDirectory()..'\\lib\\DOTG1\\maps', '*.json')
 end
-local render_font = renderCreateFont('Trebuchet MS', 8, 5)
-MODULE_MAP.load_ai_for_creep = function(ai_loop_start, handle, team, route_end)
+
+MODULE_MAP.load_ai_for_creep = function(ai_loop_start, handle, team, route_end, route_center, final_taget)
     lua_thread.create(function()
+        assert(route_center, 'no route_center')
+        local center_point_passed, route_passed = route_center == nil, false
         while true do
             wait(0)
             if doesCharExist(handle) then
                 local render_text = 'CREEP_'..tostring(handle)
                 local target_tower_find = false
+                local go_to_pos = center_point_passed and route_end or route_center
+                
                 local ped = Vector3D(getCharCoordinates(handle))
+                local ped_screen_x, ped_screen_y = convert3DCoordsToScreen(ped.x, ped.y, ped.z)
                 for index, tower in ipairs(MODULE_MAP.pool.towers) do
                     if doesObjectExist(tower.object) and doesCharExist(tower.ped) then
                         if getCharModel(handle) ~= getCharModel(tower.ped) then
@@ -285,9 +293,6 @@ MODULE_MAP.load_ai_for_creep = function(ai_loop_start, handle, team, route_end)
                                 if getDistanceBetweenCoords3d(x, y, z, ped.x, ped.y, ped.z) <= 7 then
                                     target_tower_find = true
                                     taskCharSlideToCoord(handle, x, y, z, 0, 1)
-                                    render_text = render_text..'\nTASK: DESTROY TOWER ('..tostring(tower.ped)..')' 
-                                    --clearCharTasksImmediately(handle)
-                                    --taskPlayAnim(handle, 'BAT_1', 'BASEBALL', 0, false, true, true, true, 0)
                                     MODULE_MAP.set_hp(tower.ped, getCharHealth(tower.ped) - 5)
                                     if getCharHealth(tower.ped) <= 0 then
                                         deleteObject(tower.object)
@@ -298,17 +303,32 @@ MODULE_MAP.load_ai_for_creep = function(ai_loop_start, handle, team, route_end)
                         end
                     end
                 end
-                if not target_tower_find then
-                    taskCharSlideToCoord(handle, route_end.x, route_end.y, route_end.z, 0, 1)
-                end
                 
-                -->> draw creep task
-                local x, y, z = getCharCoordinates(handle)
-                local rx, ry = convert3DCoordsToScreen(x, y, z)
-                renderFontDrawText(render_font, render_text, rx, ry, 0xFFffffff)
+                if not target_tower_find then
+                    taskCharSlideToCoord(handle, go_to_pos.x, go_to_pos.y, go_to_pos.z, 0, 1)
+                    if getDistanceBetweenCoords3d(go_to_pos.x, go_to_pos.y, go_to_pos.z, ped.x, ped.y, ped.z) <= 2 then
+                        if center_point_passed then
+                            if not route_passed then
+                                route_passed = true
+                            end
+                        else
+                            center_point_passed = true
+                        end
+                    end
+                end
+                if DEBUG then
+                    if render_font == nil then
+                        _G.render_font = renderCreateFont('Trebuchet MS', 8, 5)
+                    end
+                    local render_text = ('creep=%d;\ntarget_tower_find=%s;\ncenter_point_passed=%s'):format(
+                        handle, tostring(target_tower_find), tostring(center_point_passed)
+                    )
+                    renderFontDrawText(render_font, render_text, ped_screen_x, ped_screen_y , 0xFFffffff)
+                end
             else
                 return print('[MAP][AI] Creep brains disabled, creep not found. Team: '..team)
             end
+            wait(5000)
         end
     end)
 end
@@ -359,39 +379,28 @@ MODULE_MAP.load_map = function(file, team, teleport_on_spawn)
     setCharCoordinates(PLAYER_PED, table.unpack(data.spawn_point[team + 1]))
 
     -->> creeps ai
-    for creep_team, creep_routes in pairs(data.creeps_routes) do
+    --
+    for route_index, creep_routes in pairs(data.creeps_routes) do
+        local creep_team = creep_routes.team
         for i = 1, tonumber(creep_routes.creeps_count) do
             local route_start = Vector3D(creep_routes.spawn[1], creep_routes.spawn[2], creep_routes.spawn[3])
-            local new_creep = createChar(4, creep_team - 1 == SIDE_GROOVE and 105 or 104, route_start.x - i / 6, route_start.y, route_start.z)
-            MODULE_MAP.pool.bots[new_creep] = 'creep_'..(creep_team - 1 == 0 and 'groove' or 'ballas')..'_'..encodeJson(creep_routes.stop)
+            local new_creep = createChar(4, creep_team == SIDE_GROOVE and 105 or 104, route_start.x - i / 6, route_start.y, route_start.z)
+            MODULE_MAP.pool.bots[new_creep] = 'creep_'..(creep_team == SIDE_GROOVE and 'groove' or 'ballas')..'_'..encodeJson(creep_routes.stop)
             MODULE_MAP.set_hp(new_creep, 300)
-            MODULE_MAP.load_ai_for_creep(os.clock(), new_creep, creep_team - 1, Vector3D(creep_routes.stop[1], creep_routes.stop[2], creep_routes.stop[3]))
-            print('spawnedcreep, team:', creep_team - 1, 'handle', new_creep, doesCharExist(new_creep))
-            -- NASRAL POTOKAMI!!!!
+            MODULE_MAP.load_ai_for_creep(
+                os.clock(), 
+                new_creep, 
+                creep_team, 
+                Vector3D(creep_routes.stop[1], creep_routes.stop[2], creep_routes.stop[3]), 
+                Vector3D(creep_routes.center[1], creep_routes.center[2], creep_routes.center[3])
+            )-- NASRAL POTOKAMI!!!!
         end
+    end
+    
+    -->> thrones
+    for throne_index, throne_data in ipairs(data.thrones) do
+        MODULE_MAP.spawn_throne(Vector3D(throne_data.pos[1], throne_data.pos[2], throne_data.pos[3]), throne_data.team)
     end
 end
 
---[[
-    custom map struct:
-{
-    spawn_point = {
-        [0] = {0, 0, 0}, -- GROOVE
-        [1] = {10, 10, 0} -- BALLAS
-    },
-    towers = { -- GROOVE TOWERS
-        [0] = {
-            {0, 0, 0},
-            {1, 1, 1}
-        }, 
-        [1] = { -- BALLAS TOWERS
-            {5, 5, 5},
-            {6, 6, 6}
-        } 
-    },
-    objects = {
-
-    }
-}
-]]
 return MODULE_MAP

@@ -355,12 +355,8 @@ MODULE_UI.draw_health_bars = function(DL)
                 DL:AddRectFilled(_start, _end, 0xCC000000, 5)
                 local health_end = (hp <= max_hp and hp or max_hp) * ((_end.x - _start.x) / max_hp )
                 DL:AddRectFilled(imgui.ImVec2(_start.x + 1, _start.y + 1), imgui.ImVec2(_start.x + health_end - 1, _end.y - 1), 0xFF0000ff, 5)
-                
             end
-            DL:AddText(imgui.ImVec2(_end.x, _start.y), 0xFFffffff, result and tostring(hp)..'/'..tostring(max_hp)..' (HANDLE: '..tostring(handle)..')' or 'none, '..tostring(ped))
-            --math.floor(hp * 100 / max_hp)
-
-           
+            DL:AddText(imgui.ImVec2(_end.x, _start.y), 0xFFffffff, result and tostring(hp)..'/'..tostring(max_hp) or 'none, '..tostring(ped))
         end
     end
 end
