@@ -105,7 +105,6 @@ end
 
 local imgui = require('mimgui')
 local Vector3D = require('vector3d')
---local core = require('DOTG1.core')
 local map = require('DOTG1.map')
 local camera = require('DOTG1.camera')
 local local_player = require('DOTG1.local_player')
@@ -115,9 +114,16 @@ local ui = require('DOTG1.ui')
 local items = require('DOTG1.items')
 local ai = require('DOTG1.ai')
 local movement = require('DOTG1.movement')
-
 SIDE_GROOVE, SIDE_BALLAS, GAME_STATE = 0, 1, { NONE = 0, MAIN_MENU = 1, HERO_SELECT = 2, IN_GAME = 3, IN_GAME_PAUSED = 4 }
---PLAYER = local_player.PLAYER
+
+local selection_pos = imgui.ImVec2(0, 0)
+pedGoTo = taskCharSlideToCoord
+taskCharSlideToCoord = function(...)
+    local status, result = pcall(pedGoTo, ...)
+    if select(1, ...) == PLAYER_PED then 
+        print('[taskCharSlideToCoord]->PLAYER_PED->'..(status and 'DONE_' or 'ERROR')..':', table.concat({...}, ', '), result)
+    end
+end
 
 --==[ INTERFACE ]==--
 imgui.OnInitialize(function()
@@ -125,14 +131,6 @@ imgui.OnInitialize(function()
     ui.init()
 end)
 
-local selection_pos = imgui.ImVec2(0, 0)
-pedGoTo = taskCharSlideToCoord
-taskCharSlideToCoord = function(...)
-    local status, result = pcall(pedGoTo, ...)
-    if not status then
-        print('[PEDGOTO] '..(status and 'ALL OK' or 'FATAL')..': '..table.concat({...}, ', '), result)
-    end
-end
 local ui_frame = imgui.OnFrame(
     function() 
         return local_player.PLAYER.STATE ~= GAME_STATE.NONE
@@ -184,11 +182,12 @@ local ui_frame = imgui.OnFrame(
 
 
 -->> Event Handlers
+addEventHandler('onReceivePacket', function(id, bs) return local_player.PLAYER.STATE == GAME_STATE.NONE end)
+addEventHandler('onSendPacket', function(id, bs) return local_player.PLAYER.STATE == GAME_STATE.NONE end)
 addEventHandler('onScriptTerminate', function(scr, quit)
     if scr == thisScript() then
         map.destroy_map()
         if not quit then
-            --core.log('[FATAR ERROR] Script crashed (quit = false)')
             thisScript():reload()
         end
     end
@@ -201,7 +200,6 @@ addEventHandler('onWindowMessage', function(msg, key)
             [VK_W] = function() local_player.use_ability(local_player.PLAYER.hero.abilities[2], 2) end,
             [VK_E] = function() local_player.use_ability(local_player.PLAYER.hero.abilities[3], 3) end,
             [VK_R] = function() local_player.use_ability(local_player.PLAYER.hero.abilities[4], 4) end,
-            
             [VK_Z] = function() items.use_item(local_player.items[1], 1, false) end,
             [VK_X] = function() items.use_item(local_player.items[2], 2, false) end,
             [VK_C] = function() items.use_item(local_player.items[3], 3, false) end,
@@ -215,28 +213,13 @@ addEventHandler('onWindowMessage', function(msg, key)
     end
 end)
 
-local render_font = renderCreateFont('Trebuchet MS', 13, 5)
-
 -->> Inits and loops
 function main()
     while not isSampAvailable() do wait(0) end
-    sampRegisterChatCommand('dota', function()
+    sampRegisterChatCommand('dotg', function()
         local_player.PLAYER.STATE = GAME_STATE.MAIN_MENU
         camera.point_camera_to_player()
     end)
-    sampRegisterChatCommand('map', function()
-        lua_thread.create(function()
-            map.create_map()
-            --map.teleport_player_to_map()
-            setCharCoordinates(PLAYER_PED, 154, 5, 601)
-            wait(500)
-            PLAYER.STATE = GAME_STATE.IN_GAME
-            map.set_hp(PLAYER_PED, local_player.max_health)
-            giveWeaponToChar(PLAYER_PED, 8, 1)
-            setCurrentCharWeapon(PLAYER_PED, 8)
-        end)
-    end)
-
     sampRegisterChatCommand('dota.getherecreep', function(arg)
         local handle = tonumber(arg)
         if handle and doesCharExist(handle) then
@@ -245,25 +228,11 @@ function main()
             return sampAddChatMessage('incorrect handle', -1)
         end
     end)
-
-    sampRegisterChatCommand('dotg.loadmap', function(arg)
-        if doesFileExist(getWorkingDirectory()..'\\lib\\DOTG1\\maps\\'..arg) then
-            local F = io.open(getWorkingDirectory()..'\\lib\\DOTG1\\maps\\'..arg, 'r')
-            local json = F:read('*all')
-            F:close()
-            map.load_map(json, SIDE_GROOVE)
-        else
-            sampAddChatMessage('map not found!', -1)
-        end
-    end)
     
     -->> INIT DOTG1
-    --core.log('Initializing modules...')
     map.init()
     camera.init()
     ai.tower_loop()
-    --core.log('Tower loop started')
-    --movement.setup_key_hook() --// empty function (moved to DOTG1.lua -> addEventHandler -> onWindowMessage)
     while true do
         wait(0)
         if local_player.PLAYER.STATE == GAME_STATE.IN_GAME then
@@ -344,7 +313,6 @@ function main()
         end
     end
 end
-
 
 -- wtf? todo: move this shit to lib\DOTG1\ui.lua
 function join_argb(a, r, g, b)
