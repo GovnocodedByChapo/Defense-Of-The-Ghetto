@@ -159,8 +159,15 @@ local ui_frame = imgui.OnFrame(
                 setCharCoordinates(PLAYER_PED, 154, 5, 601)
                 giveWeaponToChar(PLAYER_PED, local_player.PLAYER.hero.weapon, local_player.PLAYER.hero.weapon_ammo)
                 setCurrentCharWeapon(PLAYER_PED, local_player.PLAYER.hero.weapon)
-                camera.point_camera_to_player()
+                
                 map.load_map(local_player.PLAYER.selected_map, local_player.PLAYER.team)
+                restoreCameraJumpcut()
+                lua_thread.create(function() -- invalid camera pos fix
+                    wait(10)
+                    --camera.point_camera_to_player()
+                   
+                
+                end)
             end)
         end
 
@@ -217,16 +224,30 @@ end)
 function main()
     while not isSampAvailable() do wait(0) end
     sampRegisterChatCommand('dotg', function()
-        local_player.PLAYER.STATE = GAME_STATE.MAIN_MENU
-        camera.point_camera_to_player()
+        if local_player.PLAYER.STATE == GAME_STATE.NONE then
+            local_player.PLAYER.STATE = GAME_STATE.MAIN_MENU
+            local_player.PLAYER.saved_pos = Vector3D(getCharCoordinates(PLAYER_PED))
+            restoreCameraJumpcut()
+            camera.point_camera_to_player()
+            restoreCameraJumpcut()
+        else
+            map.destroy_map()
+            setCharCoordinates(PLAYER_PED, local_player.PLAYER.saved_pos.x, local_player.PLAYER.saved_pos.y, local_player.PLAYER.saved_pos.z)
+            local_player.PLAYER.STATE = GAME_STATE.NONE
+            restoreCameraJumpcut()
+        end
     end)
-    sampRegisterChatCommand('dota.getherecreep', function(arg)
+    sampRegisterChatCommand('_dotg.getherecreep', function(arg)
         local handle = tonumber(arg)
         if handle and doesCharExist(handle) then
             setCharCoordinates(handle, getCharCoordinates(PLAYER_PED))
         else
             return sampAddChatMessage('incorrect handle', -1)
         end
+    end)
+    sampRegisterChatCommand('_dotg.setcameramode', function(arg)
+        local_player.PLAYER.camera_mode = tonumber(arg) or 1
+        print('camera mode = '..local_player.PLAYER.camera_mode)
     end)
     
     -->> INIT DOTG1
@@ -253,7 +274,18 @@ function main()
             movement.disable_game_keys() 
             movement.draw_circles()
 
-
+            local towers_count = { [0] = 0, [1] = 0 }
+            for k, v in ipairs(map.pool.towers) do
+                towers_count[v.gang] = towers_count[v.gang] + 1
+            end
+            print('towers_count', towers_count[0], towers_count[1])
+            if towers_count[0] == 0 or towers_count[1] == 0 then
+                sampAddChatMessage('WIN: '..(towers_count[0] == 0 and 'BALLAS' or 'GROOVE'), -1)
+                map.destroy_map()
+                setCharCoordinates(PLAYER_PED, local_player.PLAYER.saved_pos.x, local_player.PLAYER.saved_pos.y, local_player.PLAYER.saved_pos.z)
+                local_player.PLAYER.STATE = GAME_STATE.NONE
+                restoreCameraJumpcut()
+            end
 
             -->> DEBUG
             if doesObjectExist(map.CURSOR_POINTER) then
@@ -263,10 +295,12 @@ function main()
 
             -->> PED highlight
             for handle, tag in pairs(map.pool.bots) do
-                local x, y, z = getCharCoordinates(handle)
-                if map.get_distance_from_pointer(x, y, z) < 1 then
-                    drawShadow(3, x, y, z + 1, 0.0, 1, 1, 1, 0, 0) 
-                    drawLightWithRange(x, y, z + 2, 255, 0, 0, 10)  -- 09E5
+                if doesCharExist(handle) then
+                    local x, y, z = getCharCoordinates(handle)
+                    if map.get_distance_from_pointer(x, y, z) < 1 then
+                        drawShadow(3, x, y, z + 1, 0.0, 1, 1, 1, 0, 0) 
+                        drawLightWithRange(x, y, z + 2, 255, 0, 0, 10)  -- 09E5
+                    end
                 end
             end
 
@@ -303,6 +337,12 @@ function main()
                                
                                 if getDistanceBetweenCoords3d(pointer.x, pointer.y, pointer.z, x, y, z) <= 5 then
                                     sampAddChatMessage('beat tower!', -1)
+                                    map.set_hp(data.ped, getCharHealth(data.ped) - 500)
+                                    if getCharHealth(data.ped) <= 0 then
+                                        deleteObject(data.object)
+                                        deleteChar(data.ped)
+                                        table.remove(map.pool.towers, index)
+                                    end
                                     break
                                 end
                             end
