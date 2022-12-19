@@ -14,7 +14,10 @@ local DEBUG = false
 SIDE_GROOVE, SIDE_BALLAS, MODULE_MAP = 0, 1, {
     CURSOR_POINTER = nil,
     required_models = {
-        5, 103, 104, 105, 107, 149, 269, 336, 339, 359
+        5, 103, 104, 105, 107, 149, 167, 269, 294, 336, 339, 358, 359
+    },
+    required_animations = {
+        'UZI', 'BAT', 'grenade'
     },
     tower_model = 3286, 
     pos = Vector3D(0, 0, 600),
@@ -60,14 +63,16 @@ end
 MODULE_MAP.deal_damage_to_point = function(point, radius, damage, team_damage)
     for ped, tag in pairs(MODULE_MAP.pool.bots) do
         if doesCharExist(ped) then
-            local ped_pos = Vector3D(getCharCoordinates(ped))
-            if getDistanceBetweenCoords3d(point.x, point.y, point.z, ped_pos.x, ped_pos.y, ped_pos.z) <= radius then
-                local start_hp = getCharHealth(ped)
-                if start_hp - damage <= 0 then
-                    MODULE_MAP.pool.bots[ped] = nil
-                    deleteChar(ped)
-                else
-                    MODULE_MAP.set_hp(ped, start_hp - damage)
+            if team_damage or not tag:find('groove') then
+                local ped_pos = Vector3D(getCharCoordinates(ped))
+                if getDistanceBetweenCoords3d(point.x, point.y, point.z, ped_pos.x, ped_pos.y, ped_pos.z) <= radius then
+                    local start_hp = getCharHealth(ped)
+                    if start_hp - damage <= 0 then
+                        MODULE_MAP.pool.bots[ped] = nil
+                        deleteChar(ped)
+                    else
+                        MODULE_MAP.set_hp(ped, start_hp - damage)
+                    end
                 end
             end
         end
@@ -216,12 +221,14 @@ end
 
 MODULE_MAP.draw_circle_on_target = function()
     for handle, tag in pairs(MODULE_MAP.pool.bots) do
-        local curX, curY = getCursorPos()
-        local x, y, z = getCharCoordinates(handle)
-        local pedX, pedY = convert3DCoordsToScreen(x, y, z)
-        if getDistanceBetweenCoords2d(curX, curY, pedX, pedY) < 10 then
-            --MODULE_MAP.drawCircleIn3d(x, y, z, 0.3, 0xFFff0000, 2, 100)
-            drawShadow(3, x, y, z, 0.0, 1, 1, 1, 0, 0) 
+        if doesCharExist(handle) then
+            local curX, curY = getCursorPos()
+            local x, y, z = getCharCoordinates(handle)
+            local pedX, pedY = convert3DCoordsToScreen(x, y, z)
+            if getDistanceBetweenCoords2d(curX, curY, pedX, pedY) < 10 then
+                --MODULE_MAP.drawCircleIn3d(x, y, z, 0.3, 0xFFff0000, 2, 100)
+                drawShadow(3, x, y, z, 0.0, 1, 1, 1, 0, 0) 
+            end
         end
     end
 end
@@ -248,6 +255,13 @@ MODULE_MAP.init = function()
             loadAllModelsNow()
         end
     end
+    --[[
+    for k, v in ipairs(MODULE_MAP.required_animations) do
+        if not hasAnimationLoaded(v) then
+            requestAnimation(v)
+        end
+    end
+    ]]
 end
 
 MODULE_MAP.get_distance_from_pointer = function(x, y, z)
@@ -398,9 +412,11 @@ MODULE_MAP.load_map = function(file, team, teleport_on_spawn)
     end
     
     -->> thrones
+    --[[
     for throne_index, throne_data in ipairs(data.thrones) do
         MODULE_MAP.spawn_throne(Vector3D(throne_data.pos[1], throne_data.pos[2], throne_data.pos[3]), throne_data.team)
     end
+    ]]
 end
 
 return MODULE_MAP

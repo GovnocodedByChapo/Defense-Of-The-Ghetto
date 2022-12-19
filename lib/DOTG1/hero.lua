@@ -1,6 +1,7 @@
 local local_player = require('DOTG1.local_player')
 local resource = require('DOTG1.resource')
 local map = require('DOTG1.map')
+local movement = require('DOTG1.movement')
 
 ABILITY_TYPE = {
     ACTIVE = 0,
@@ -93,7 +94,7 @@ MODULE_HERO.list = {
         }
     },
     {
-        name = 'SIDODJI',
+        name = 'Samp Funcs',
         image = {},
         model = 5,
         damage = 30,
@@ -118,7 +119,7 @@ MODULE_HERO.list = {
                     lua_thread.create(function()
                         local x, y, z = get_coil_pos(3)
                         local smoke = createObject(18686, x, y, z - 1)
-                        map.deal_damage_to_point(Vector3D(x, y, z - 1), 1, 50)
+                        map.deal_damage_to_point(Vector3D(x, y, z - 1), 3, 50, false)
                         table.insert(map.pool.objects, smoke)
                         wait(3000)
                         deleteObject(smoke)
@@ -135,7 +136,7 @@ MODULE_HERO.list = {
                     lua_thread.create(function()
                         local x, y, z = get_coil_pos(6)
                         local smoke = createObject(18686, x, y, z - 1)
-                        map.deal_damage_to_point(Vector3D(x, y, z - 1), 1, 50)
+                        map.deal_damage_to_point(Vector3D(x, y, z - 1), 3, 50, false)
                         table.insert(map.pool.objects, smoke)
                         wait(3000)
                         deleteObject(smoke)
@@ -152,7 +153,7 @@ MODULE_HERO.list = {
                     lua_thread.create(function()
                         local x, y, z = get_coil_pos(9)
                         local smoke = createObject(18686, x, y, z - 1)
-                        map.deal_damage_to_point(Vector3D(x, y, z - 1), 1, 50)
+                        map.deal_damage_to_point(Vector3D(x, y, z - 1), 3, 50, false)
                         table.insert(map.pool.objects, smoke)
                         wait(3000)
                         deleteObject(smoke)
@@ -192,7 +193,7 @@ MODULE_HERO.list = {
                                     slideObject(handle, data.stop.x, data.stop.y, data.stop.z, 0.5, 0.5, 0.5, false)
                                     local result, x, y, z = getObjectCoordinates(handle)
                                     if result then
-                                        map.deal_damage_to_point(Vector3D(x, y, z), 1, 55)
+                                        map.deal_damage_to_point(Vector3D(x, y, z), 3, 55)
                                     end
                                 end
                             end
@@ -207,7 +208,72 @@ MODULE_HERO.list = {
                 end
             },
         }
-    }
+    },
+    {
+        name = 'Sniper',
+        image = {},
+        model = 294,
+        damage = 30,
+        hit_distance = 14,
+        hit_speed = 1,
+        weapon = 34,
+        weapon_ammo = 999,
+        max_health = 580,
+        max_mana = 255,
+        hit_animation = {
+            file = 'UZI',--'SILENCED',
+            name = 'UZI_FIRE',--'SILENCE_FIRE'
+        },
+        abilities = {
+            {
+                name = 'SHRAPNEL',
+                icon = 'NONE_',
+                mana_required = 75,
+                cooldown = 23,
+                tooltip = 'Consumes a charge to launch a ball of shrapnel that showers the target area in explosive pellets. Enemies are subject to damage and slowed movement. Reveals the targeted area. Shrapnel charges restore every 35.0 seconds.',
+                callback = function()
+                    lua_thread.create(function()
+                        while not wasKeyPressed(VK_LBUTTON) do 
+                            wait(0)
+                            local point, ped = movement.get_pointer_pos(), Vector3D(getCharCoordinates(PLAYER_PED))
+                            map.drawCircleIn3d(ped.x, ped.y, ped.z, 14, 0xFF3fbf43, 3, 100)
+                            local ped_2d_x, ped_2d_y = convert3DCoordsToScreen(ped.x, ped.y, ped.z)
+                            local point_2d_x, point_2d_y = convert3DCoordsToScreen(point.x, point.y, point.z)
+                            if getDistanceBetweenCoords3d(point.x, point.y, point.z, ped.x, ped.y, ped.z) <= 14 then
+                                renderDrawLine(ped_2d_x, ped_2d_y, point_2d_x, point_2d_y, 3, 0xFF3fbf43)
+                                map.drawCircleIn3d(point.x, point.y, point.z, 5, 0xFFff0000, 2, 50)
+                            end
+                        end
+                        local start, last_damage = os.clock(), 0
+                        local duration = 10
+                        local pos = movement.get_pointer_pos()
+
+                        while start + 10 - os.clock() > 0 do
+                            wait(0)
+                            map.drawCircleIn3d(pos.x, pos.y, pos.z, 5, 0xFFff0000, 2, 50)
+                            if last_damage + 0.7 - os.clock() <= 0 then
+                                map.deal_damage_to_point(pos, 5, 13, false)
+                                last_damage = os.clock()
+                            end
+                        end
+                    end)
+                end
+            },
+            {
+                name = 'HEADSHOT',
+                icon = 'NONE_',
+                mana_required = 30,
+                cooldown = 10,
+                tooltip = 'Sniper increases his accuracy, giving him a chance to deal extra damage and knock back his enemies. Headshots briefly slow enemy movement and attack speed by -100.0%.\n\nCHANCE: 40%',
+                callback = function()
+                    local r = math.random(0, 100)
+                    if r <= 40 then
+
+                    end
+                end
+            },
+        }
+    },
 }
 
 MODULE_HERO.init = function()

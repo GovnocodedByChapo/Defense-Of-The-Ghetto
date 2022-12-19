@@ -49,7 +49,7 @@ MOVEMENT.loop = function()
         if doesObjectExist(map.CURSOR_POINTER) then
             local cursor_result, cursorX, cursorY, cursorZ = getObjectCoordinates(map.CURSOR_POINTER)
             for handle, tag in pairs(map.pool.bots) do
-                if handle ~= PLAYER_PED then
+                if doesCharExist(handle) and handle ~= PLAYER_PED then
                     local x, y, z = getCharCoordinates(handle)
                     if getDistanceBetweenCoords3d(cursorX, cursorY, cursorZ, x, y, z) < 1 then
                         MOVEMENT.target_handle = handle
@@ -79,24 +79,54 @@ MOVEMENT.loop = function()
         local ped = Vector3D(getCharCoordinates(PLAYER_PED))
         local go_to = Vector3D(MOVEMENT.go_to_coords_coords.x,  MOVEMENT.go_to_coords_coords.y,  MOVEMENT.go_to_coords_coords.z)
         
+        local fight = false
         if MOVEMENT.target_handle and MOVEMENT.target_handle ~= PLAYER_PED then
             if doesCharExist(MOVEMENT.target_handle) then
+                fight = true
                 go_to = Vector3D(getCharCoordinates(MOVEMENT.target_handle))
+                local target = Vector3D(getCharCoordinates(MOVEMENT.target_handle))
+                local player_ped = Vector3D(getCharCoordinates(PLAYER_PED))
+
+                if getDistanceBetweenCoords3d(player_ped.x, player_ped.y, player_ped.z, target.x, target.y, target.z) <= local_player.PLAYER.hero.hit_distance then
+                    if MOVEMENT.last_hit + local_player.PLAYER.hero.hit_speed - os.clock() <= 0 then
+                        MOVEMENT.last_hit = os.clock()
+                        clearCharTasksImmediately(PLAYER_PED)
+                        taskPlayAnim(PLAYER_PED, local_player.PLAYER.hero.hit_animation.name, local_player.PLAYER.hero.hit_animation.file, 1000, false, false, false, false, -1)
+                        sampAddChatMessage('HIT', -1)
+                        map.set_hp(MOVEMENT.target_handle, getCharHealth(MOVEMENT.target_handle) - local_player.PLAYER.hero.damage) -- 20 - damage
+                        if getCharHealth(MOVEMENT.target_handle) <= 0 then
+                            map.pool.bots[MOVEMENT.target_handle] = nil
+                            deleteChar(MOVEMENT.target_handle)
+                            MOVEMENT.target_handle = nil
+                            MOVEMENT.go_to_coords = false
+                            clearCharTasksImmediately(PLAYER_PED)
+                            math.randomseed(os.clock() * math.random(1, 9999))
+                            local reward = math.random(40, 100)
+                            local_player.money = local_player.money + reward
+                            printStringNow('~y~+ '..reward, 500)
+                        end
+                    end
+                else
+                    fight = false
+                end
             else
                 MOVEMENT.target_handle = nil
             end
         end
-        taskCharSlideToCoord(PLAYER_PED, go_to.x, go_to.y, go_to.z, getCharHeading(PLAYER_PED), 1) 
-        setGameKeyState(16, 256)
-        if getDistanceBetweenCoords3d(ped.x, ped.y, ped.z, go_to.x,  go_to.y,  go_to.z) <= 1.5 then
-            if not MOVEMENT.target_handle then
-                MOVEMENT.go_to_coords = false
+        if not fight then
+            taskCharSlideToCoord(PLAYER_PED, go_to.x, go_to.y, go_to.z, getCharHeading(PLAYER_PED), 1) 
+            setGameKeyState(16, 256)
+            if getDistanceBetweenCoords3d(ped.x, ped.y, ped.z, go_to.x,  go_to.y,  go_to.z) <= 1.5 then
+                if not MOVEMENT.target_handle then
+                    MOVEMENT.go_to_coords = false
+                end
             end
         end
     end
 end
 
 MOVEMENT.fight_loop = function()
+    --
     if MOVEMENT.target_handle and MOVEMENT.target_handle ~= PLAYER_PED then
         if doesCharExist(MOVEMENT.target_handle) then
             local target = Vector3D(getCharCoordinates(MOVEMENT.target_handle))
@@ -120,11 +150,14 @@ MOVEMENT.fight_loop = function()
                         printStringNow('~y~+ '..reward, 500)
                     end
                 end
+            else
+
             end
             local sx, sy = convert3DCoordsToScreen(target.x, target.y, target.z)
             renderDrawPolygon(sx, sy, 20, 20, 10, 0, 0xFFff0000)
         end
     end
+    
 end
 
 MOVEMENT.draw_circles = function()

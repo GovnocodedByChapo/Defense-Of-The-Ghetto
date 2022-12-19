@@ -12,7 +12,8 @@ LOCAL_PLAYER = {
         hero = 1,
         team = 0,
         camera_mode = 0,
-        debuff = {}
+        debuff = {},
+        saved_pos = Vector3D(0, 0, 3)
     },
     v = {},
     max_health = 500,

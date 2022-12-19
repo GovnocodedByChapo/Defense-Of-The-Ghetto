@@ -36,6 +36,7 @@ MODULE_CAMERA.point_camera_to_player = function()
 end
 
 MODULE_CAMERA.update_camera = function()
+    print('CAMERA', MODULE_CAMERA.pos.x, MODULE_CAMERA.pos.y, MODULE_CAMERA.pos.z)
     MODULE_CAMERA.set_pos(MODULE_CAMERA.pos)
     MODULE_CAMERA.look_at(Vector3D(MODULE_CAMERA.pos.x - 20, MODULE_CAMERA.pos.y, MODULE_CAMERA.pos.z - MODULE_CAMERA.zoom), 0)
     setCameraPositionUnfixed(0, 3.15)

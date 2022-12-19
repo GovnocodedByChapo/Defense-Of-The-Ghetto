@@ -25,7 +25,7 @@ AI.tower_loop = function()
                         if target_tag:find('(.+)_(.+)') then
                             local target_type, target_team = target_tag:match('(.+)_(.+)')
                             if target_type == 'creep' or target_type == 'player' then
-                                if team ~= target_team or true then
+                                if team ~= target_team then
                                     local pedX, pedY, pedZ = getCharCoordinates(handle)
                                     local targetX, targetY, targetZ = getCharCoordinates(target_ped)
                                     if getDistanceBetweenCoords3d(pedX, pedY, pedZ, targetX, targetY, targetZ) < 10 then
@@ -36,7 +36,6 @@ AI.tower_loop = function()
                                         local rocket = createObject(345, pedX, pedY, pedZ + 5)
                                         setObjectCollision(rocket, false)
                                         table.insert(map.pool.objects, rocket)
-                                        
                                         while start + 3 - os.clock() > 0 do
                                             wait(0) 
                                             if doesObjectExist(rocket) then
@@ -46,7 +45,7 @@ AI.tower_loop = function()
                                                         deleteObject(rocket)
                                                         if target_ped == PLAYER_PED then
                                                             local_player.health = local_player.health - 50
-                                                            sampAddChatMessage('damage deal', -1)
+                                                            --print('damage deal')
                                                         else 
                                                             map.set_hp(target_ped, getCharHealth(target_ped) - 50)
                                                         end

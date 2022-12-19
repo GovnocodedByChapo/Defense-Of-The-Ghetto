@@ -174,6 +174,7 @@ MODULE_UI.draw_game_hud = function()
             imgui.PopStyleVar()
             if imgui.IsItemHovered() then
                 imgui.BeginTooltip()
+                imgui.PushTextWrapPos(200)
                 imgui.Text(ability.name..'\n\n'..u8(ability.tooltip))
                 imgui.EndTooltip()
             end
