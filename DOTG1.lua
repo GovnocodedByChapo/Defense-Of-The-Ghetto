@@ -110,6 +110,7 @@ local camera = require('DOTG1.camera')
 local local_player = require('DOTG1.local_player')
 local hero = require('DOTG1.hero')
 local resource = require('DOTG1.resource')
+
 local ui = require('DOTG1.ui')
 local items = require('DOTG1.items')
 local ai = require('DOTG1.ai')
@@ -127,8 +128,10 @@ end
 
 --==[ INTERFACE ]==--
 imgui.OnInitialize(function()
+    printStyledString('LOADING TEXTURES', 250, 7)
     imgui.GetIO().IniFilename = nil
     ui.init()
+    resource.load_heroes() 
 end)
 
 local ui_frame = imgui.OnFrame(
@@ -159,15 +162,9 @@ local ui_frame = imgui.OnFrame(
                 setCharCoordinates(PLAYER_PED, 154, 5, 601)
                 giveWeaponToChar(PLAYER_PED, local_player.PLAYER.hero.weapon, local_player.PLAYER.hero.weapon_ammo)
                 setCurrentCharWeapon(PLAYER_PED, local_player.PLAYER.hero.weapon)
-                
+                restoreCamera() 
                 map.load_map(local_player.PLAYER.selected_map, local_player.PLAYER.team)
-                restoreCameraJumpcut()
-                lua_thread.create(function() -- invalid camera pos fix
-                    wait(10)
-                    --camera.point_camera_to_player()
-                   
-                
-                end)
+                camera.point_camera_to_player();
             end)
         end
 
@@ -195,6 +192,7 @@ addEventHandler('onScriptTerminate', function(scr, quit)
     if scr == thisScript() then
         map.destroy_map()
         if not quit then
+            sampAddChatMessage('fatal error, reloading...', -1)
             thisScript():reload()
         end
     end
@@ -220,9 +218,27 @@ addEventHandler('onWindowMessage', function(msg, key)
     end
 end)
 
+
+local CPed_SetModelIndex = ffi.cast('void(__thiscall *)(void*, unsigned int)', 0x5E4880)
+function setCharModel(ped, model)
+    assert(doesCharExist(ped), 'ped not found')
+    if not hasModelLoaded(model) then
+        requestModel(model)
+        loadAllModelsNow()
+    end
+    CPed_SetModelIndex(ffi.cast('void*', getCharPointer(ped)), ffi.cast('unsigned int', model))
+end
+
 -->> Inits and loops
 function main()
     while not isSampAvailable() do wait(0) end
+    sampRegisterChatCommand('CHANGEMYFUCKINGSKINNIGGA', function(arg)
+        if tonumber(arg) then
+            setCharModel(PLAYER_PED, tonumber(arg))
+        else
+            sampAddChatMessage('incorrect skin id!', -1)
+        end
+    end)
     sampRegisterChatCommand('dotg', function()
         if local_player.PLAYER.STATE == GAME_STATE.NONE then
             local_player.PLAYER.STATE = GAME_STATE.MAIN_MENU
@@ -232,9 +248,14 @@ function main()
             restoreCameraJumpcut()
         else
             map.destroy_map()
+            
             setCharCoordinates(PLAYER_PED, local_player.PLAYER.saved_pos.x, local_player.PLAYER.saved_pos.y, local_player.PLAYER.saved_pos.z)
             local_player.PLAYER.STATE = GAME_STATE.NONE
-            restoreCameraJumpcut()
+            restoreCameraJumpcut() -- рот ебал, не воркает
+            lua_thread.create(function()
+                wait(1000)
+                restoreCameraJumpcut()
+            end)
         end
     end)
     sampRegisterChatCommand('_dotg.getherecreep', function(arg)
@@ -254,8 +275,14 @@ function main()
     map.init()
     camera.init()
     ai.tower_loop()
+    
     while true do
         wait(0)
+
+        if wasKeyPressed(51) then
+            sampAddChatMessage('Reloading DOTG1...', -1)
+            thisScript():reload()
+        end
         if local_player.PLAYER.STATE == GAME_STATE.IN_GAME then
             if wasKeyPressed(VK_LBUTTON) then
                 selection_pos = imgui.ImVec2(getCursorPos())
@@ -268,7 +295,10 @@ function main()
             if isKeyDown(VK_LMENU) then map.draw_building_circles() end
             map.set_hp(PLAYER_PED, local_player.health)
             map.draw_circle_on_target()
-            map.bots_ai()
+            map.loop()
+
+            hero.loop()
+
             movement.loop()
             movement.fight_loop()
             movement.disable_game_keys() 
@@ -278,13 +308,14 @@ function main()
             for k, v in ipairs(map.pool.towers) do
                 towers_count[v.gang] = towers_count[v.gang] + 1
             end
-            print('towers_count', towers_count[0], towers_count[1])
+            --print('towers_count', towers_count[0], towers_count[1])
             if towers_count[0] == 0 or towers_count[1] == 0 then
                 sampAddChatMessage('WIN: '..(towers_count[0] == 0 and 'BALLAS' or 'GROOVE'), -1)
                 map.destroy_map()
                 setCharCoordinates(PLAYER_PED, local_player.PLAYER.saved_pos.x, local_player.PLAYER.saved_pos.y, local_player.PLAYER.saved_pos.z)
                 local_player.PLAYER.STATE = GAME_STATE.NONE
                 restoreCameraJumpcut()
+               
             end
 
             -->> DEBUG
@@ -324,7 +355,7 @@ function main()
             end
 
             -->> destroy towers
-            
+            --[[
             if wasKeyPressed(VK_RBUTTON) then
                 for index, data in ipairs(map.pool.towers) do
                     if doesObjectExist(data.object) and doesCharExist(data.ped) then
@@ -350,6 +381,7 @@ function main()
                     end
                 end
             end
+            ]]
         end
     end
 end
