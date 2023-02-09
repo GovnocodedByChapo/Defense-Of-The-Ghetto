@@ -39,19 +39,27 @@ LOCAL_PLAYER = {
 
 LOCAL_PLAYER.use_ability = function(ability, index)
     if ability then
-        if LOCAL_PLAYER.mana >= ability.mana_required then
-            if LOCAL_PLAYER.cooldown[index] + ability.cooldown - os.clock() <= 0 then
-                LOCAL_PLAYER.cooldown[index] = os.clock()
-                ability.callback()
-                LOCAL_PLAYER.mana = LOCAL_PLAYER.mana - ability.mana_required
-                return true, 'OK'
+        if ability.type == nil or ability.type == 0 then
+            if LOCAL_PLAYER.mana >= ability.mana_required then
+                if LOCAL_PLAYER.cooldown[index] + ability.cooldown - os.clock() <= 0 then
+                    LOCAL_PLAYER.cooldown[index] = os.clock()
+                    local result = ability.callback()
+                    if result == nil or result == true then
+                        LOCAL_PLAYER.mana = LOCAL_PLAYER.mana - ability.mana_required   
+                        return true, 'OK'
+                    elseif result == false then
+                        return false, 'canceled_by_ability'
+                    end
+                else
+                    sampAddChatMessage('COOLDOWN, WAIT', -1)
+                    return false, 'COOLDOWN'
+                end
             else
-                sampAddChatMessage('COOLDOWN, WAIT', -1)
-                return false, 'COOLDOWN'
+                sampAddChatMessage('no mana, retard.', -1)
+                return false, 'NO_MANA'
             end
         else
-            sampAddChatMessage('no mana, retard.', -1)
-            return false, 'NO_MANA'
+            sampAddChatMessage('error, ability is passive', -1)
         end
     end
     return false, 'ACTION_IGNORED'
@@ -68,6 +76,7 @@ LOCAL_PLAYER.set = function(key, value)
 end
 
 LOCAL_PLAYER.loop = function()
+    
     if LOCAL_PLAYER.get('regen_last') + 1 < os.clock() then
         LOCAL_PLAYER.money = LOCAL_PLAYER.money + 2
         LOCAL_PLAYER.set('regen_last', os.clock())

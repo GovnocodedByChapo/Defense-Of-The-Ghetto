@@ -22,6 +22,19 @@ MOVEMENT.setup_key_hook = function()
     
 end
 
+MOVEMENT.get_nearest_ped_from_pos = function(pos)
+    local result = nil --{ handle = PLAYER_PED, dist = 0 }
+    local me = Vector3D(getCharCoordinates(PLAYER_PED))
+    for k, v in ipairs(getAllChars()) do
+        local pedPos = Vector3D(getCharCoordinates(v))
+        local dist = getDistanceBetweenCoords3d(me.x, me.y, me.z, pedPos.x, pedPos.y, pedPos.z)
+        if result and dist < result.dist then
+            result = { handle = v, dist = dist }
+        end
+    end
+    return result
+end
+
 MOVEMENT.get_pointer_pos = function(custom)
     local args = custom or {true, true, false, true, false, false, false}
     local curX, curY = getCursorPos()
@@ -42,6 +55,19 @@ MOVEMENT.get_pointer_pos = function(custom)
     return Vector3D(0, 0, 0), colpoint
 end
 
+function isPedTower(ped)
+    for index, data in ipairs(map.pool.towers) do
+        --gang = gang,
+        --ped = new_ped,
+        --object = new_object,
+        --health = 1000
+        if data.ped == ped then
+            return true, data
+        end
+    end
+    return false, {}
+end 
+
 MOVEMENT.loop = function()
     local pos = MOVEMENT.get_pointer_pos(nil)
     if wasKeyPressed(VK_RBUTTON) then
@@ -51,9 +77,13 @@ MOVEMENT.loop = function()
             for handle, tag in pairs(map.pool.bots) do
                 if doesCharExist(handle) and handle ~= PLAYER_PED then
                     local x, y, z = getCharCoordinates(handle)
-                    if getDistanceBetweenCoords3d(cursorX, cursorY, cursorZ, x, y, z) < 1 then
+                    local dist = getDistanceBetweenCoords3d(cursorX, cursorY, cursorZ, x, y, z)
+                    if (not isPedTower(handle) and dist < 1) or (isPedTower(handle) and dist < 5) then
                         MOVEMENT.target_handle = handle
                         beat_target = true
+                        setObjectVisible(map.ENEMY_POINTER, true)
+                        setObjectScale(map.ENEMY_POINTER, isPedTower(handle) and 0.5 or 0.1)
+                        attachObjectToChar(map.ENEMY_POINTER, handle, 0, 0, isPedTower(handle) and -31.5 or -7, 90, 0, 0)
                         sampAddChatMessage('gotoped', -1)
                         break
                     end
@@ -61,9 +91,9 @@ MOVEMENT.loop = function()
             end
         end
         if not beat_target then
+            setObjectVisible(map.ENEMY_POINTER, false)
             MOVEMENT.target_handle = nil
         end
-        
         MOVEMENT.go_to_coords = true
         MOVEMENT.go_to_coords_coords = pos
         table.insert(MOVEMENT.circles, {
@@ -86,6 +116,7 @@ MOVEMENT.loop = function()
                 go_to = Vector3D(getCharCoordinates(MOVEMENT.target_handle))
                 local target = Vector3D(getCharCoordinates(MOVEMENT.target_handle))
                 local player_ped = Vector3D(getCharCoordinates(PLAYER_PED))
+                setObjectCoordinates(map.ENEMY_POINTER, target.x, target.y, target.z)
 
                 if getDistanceBetweenCoords3d(player_ped.x, player_ped.y, player_ped.z, target.x, target.y, target.z) <= local_player.PLAYER.hero.hit_distance then
                     if MOVEMENT.last_hit + local_player.PLAYER.hero.hit_speed - os.clock() <= 0 then
@@ -93,9 +124,10 @@ MOVEMENT.loop = function()
                         clearCharTasksImmediately(PLAYER_PED)
                         taskPlayAnim(PLAYER_PED, local_player.PLAYER.hero.hit_animation.name, local_player.PLAYER.hero.hit_animation.file, 1000, false, false, false, false, -1)
                         sampAddChatMessage('HIT', -1)
-                        map.set_hp(MOVEMENT.target_handle, getCharHealth(MOVEMENT.target_handle) - local_player.PLAYER.hero.damage) -- 20 - damage
+                        map.set_hp(MOVEMENT.target_handle, getCharHealth(MOVEMENT.target_handle) - (local_player.PLAYER.hero.damage / (isPedTower(MOVEMENT.target_handle) and 3 or 1))) -- 20 - damage
                         if getCharHealth(MOVEMENT.target_handle) <= 0 then
                             map.pool.bots[MOVEMENT.target_handle] = nil
+                            setObjectVisible(map.ENEMY_POINTER, false)
                             deleteChar(MOVEMENT.target_handle)
                             MOVEMENT.target_handle = nil
                             MOVEMENT.go_to_coords = false
@@ -131,7 +163,8 @@ MOVEMENT.fight_loop = function()
         if doesCharExist(MOVEMENT.target_handle) then
             local target = Vector3D(getCharCoordinates(MOVEMENT.target_handle))
             local player = Vector3D(getCharCoordinates(PLAYER_PED))
-            if getDistanceBetweenCoords3d(target.x, target.y, target.z, player.x, player.y, player.z) <= local_player.PLAYER.hero.hit_distance then
+            local dist = getDistanceBetweenCoords3d(target.x, target.y, target.z, player.x, player.y, player.z)
+            if (isPedTower(MOVEMENT.target_handle) and dist < 5) or dist <= local_player.PLAYER.hero.hit_distance then
                 local fire_rate = 1
                 if MOVEMENT.last_hit + local_player.PLAYER.hero.hit_speed - os.clock() <= 0 then
                     MOVEMENT.last_hit = os.clock()
@@ -153,8 +186,8 @@ MOVEMENT.fight_loop = function()
             else
 
             end
-            local sx, sy = convert3DCoordsToScreen(target.x, target.y, target.z)
-            renderDrawPolygon(sx, sy, 20, 20, 10, 0, 0xFFff0000)
+            --local sx, sy = convert3DCoordsToScreen(target.x, target.y, target.z)
+            --renderDrawPolygon(sx, sy, 20, 20, 10, 0, 0xFFff0000)
         end
     end
     

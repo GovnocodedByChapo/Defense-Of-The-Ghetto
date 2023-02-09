@@ -37,29 +37,12 @@ function imgui.CenterText(text)
 end
 
 
-imgui.OnInitialize(function()
-    --printStyledString('LOADING TEXTURES', 250, 7)
-    --imgui.GetIO().IniFilename = nil
-    --ui.init()
-    --resource.load_heroes() 
-    for k, v in next, resource do
-        print(k, v)
-    end
-end)
-
 MODULE_UI.draw_main_menu = function(hero_select_callback)
     local size = imgui.ImVec2(getScreenResolution())
     imgui.SetNextWindowSize(size, imgui.Cond.Always)
     imgui.SetNextWindowPos(imgui.ImVec2(0, 0), imgui.Cond.Always, imgui.ImVec2(0, 0))
     if imgui.Begin('dotg1_main_menu', _, imgui.WindowFlags.NoDecoration) then
-        local logoSize = imgui.ImVec2(size.x / 6, size.x / 6)
-        imgui.SetCursorPos(imgui.ImVec2(size.x / 2 - logoSize.x / 2, logoSize.x / 12))
-        if resource.logo then
-           imgui.Image(resource.logo, logoSize)
-        else
-            imgui.Button('LOGO', logoSize)
-        end
-
+        
         imgui.SetCursorPosY(size.y / 5)
         imgui.PushFont(MODULE_UI.font[40])
         imgui.CenterText('Defense Of The Ghetto')
@@ -111,7 +94,7 @@ MODULE_UI.draw_main_menu = function(hero_select_callback)
                    
                     imgui.SetCursorPos(imgui.ImVec2(0, 0))
                     local p = imgui.GetCursorScreenPos()
-                    if imgui.ImageButton(_hero.image or resource.placeholder, image_size) then
+                    if imgui.ImageButton(MODULE_UI.image.hero[index].icon, image_size) then
                         hero_select_callback(index)
                     end
                     if imgui.IsItemHovered() then
@@ -133,9 +116,6 @@ MODULE_UI.draw_main_menu = function(hero_select_callback)
                 end
             end
         end
-
-        
-
         imgui.End()
     end
 end
@@ -151,7 +131,7 @@ MODULE_UI.draw_game_hud = function()
         imgui.SetCursorPos(imgui.ImVec2(10, 10))
         if imgui.BeginChild('player_image', imgui.ImVec2(size.y - 20, size.y - 20), true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse) then
             imgui.SetCursorPos(imgui.ImVec2(0, 0))
-            imgui.Image(local_player.PLAYER.hero.image or resource.placeholder, imgui.ImVec2(size.y - 20, size.y - 20))
+            imgui.Image(MODULE_UI.image.hero[local_player.PLAYER.hero_index].icon, imgui.ImVec2(size.y - 20, size.y - 20))
             imgui.EndChild()
         end
         if imgui.IsItemClicked() then
@@ -164,7 +144,7 @@ MODULE_UI.draw_game_hud = function()
             if imgui.BeginChild('ability_'..tostring(index), aSize, true, imgui.WindowFlags.NoScrollbar + imgui.WindowFlags.NoScrollWithMouse) then
                 imgui.SetCursorPos(imgui.ImVec2(0, 0))
                 local _dl, _start = imgui.GetWindowDrawList(), imgui.GetCursorScreenPos()
-                imgui.Image(ability.image or resource.placeholder, aSize)
+                imgui.Image(MODULE_UI.image.hero[local_player.PLAYER.hero_index].ability[index], aSize)
                 
                 if ability.type == nil or ability.type == 1 then
                     imgui.SetCursorPos(imgui.ImVec2(5, 5))
@@ -254,7 +234,6 @@ MODULE_UI.draw_game_hud = function()
                 if local_player.items[slot] then
                     if items.list[local_player.items[slot]] then
                         imgui.Image(items.list[local_player.items[slot]].icon, slot_size)
-                        --imgui.Button('item_ui_237')
                     end
                 end
                 imgui.EndChild() 
@@ -378,9 +357,9 @@ MODULE_UI.draw_health_bars = function(DL)
             if result then
                 DL:AddRectFilled(_start, _end, 0xCC000000, 5)
                 local health_end = (hp <= max_hp and hp or max_hp) * ((_end.x - _start.x) / max_hp )
-                DL:AddRectFilled(imgui.ImVec2(_start.x + 1, _start.y + 1), imgui.ImVec2(_start.x + health_end - 1, _end.y - 1), getCharModel(handle) == 105 and 0xFF13ba34 or 0xFF0000ff, 5)
+                DL:AddRectFilled(imgui.ImVec2(_start.x + 1, _start.y + 1), imgui.ImVec2(_start.x + health_end - 1, _end.y - 1), 0xFF0000ff, 5)
             end
-            DL:AddText(imgui.ImVec2(_end.x, _start.y), 0xFFffffff, result and tostring(hp)..'/'..tostring(max_hp)..', HANDLE: '..tostring(handle) or 'none, '..tostring(ped))
+            DL:AddText(imgui.ImVec2(_end.x, _start.y), 0xFFffffff, result and tostring(hp)..'/'..tostring(max_hp) or 'none, '..tostring(ped))
         end
     end
 end

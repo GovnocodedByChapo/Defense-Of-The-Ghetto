@@ -15,8 +15,8 @@ ITEMS = {
 ITEMS.list = {
     ['Enchanted Mango'] = {
         name = 'mana',
-        price = 100,
-        description = 'regen 50 mana points',
+        price = 65,
+        description = 'ћгновенно восстанавливает 100 маны.',
         callback = function()
             local_player.mana = local_player.mana + 50
             if local_player.mana > local_player.max_mana then
@@ -35,12 +35,13 @@ ITEMS.list = {
             end
         end
     },
-    ['blink_dagger'] = {
+    ['Blink Dagger'] = {
         no_destroy_after_use = true,
         name = 'dagger',
-        price = 100,
+        price = 2250,
         mana_required = 0,
         cooldown = 15,
+        description = 'ћгновенно перемещает к указанной точке на рассто€нии до 14',
         callback = function()
             lua_thread.create(function()
                 while not wasKeyPressed(VK_LBUTTON) do 
@@ -61,7 +62,21 @@ ITEMS.list = {
                 return
             end)
         end
-    }
+    },
+    ['Clarity'] = {
+        name = 'manaregen',
+        price = 50,
+        description = '”величивает восстановление маны выбранного существа на 6. ƒействует 25 сек. ¬осстановление прекращаетс€, если получить урон от вражеского геро€ или –ошана.',
+        callback = function()
+            lua_thread.create(function()
+                local default = local_player.regen_mana
+                local start = os.clock()
+                local_player.regen_mana = local_player.regen_mana + 6
+                while start + 25 - os.clock() > 0 do wait(0) end
+                local_player.regen_mana = default
+            end)
+        end
+    },
 }
 
 ITEMS.sell_item = function(name, slot)
